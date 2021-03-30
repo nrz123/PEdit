@@ -139,7 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="PE.cpp" />
     <ClCompile Include="PEedit.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PE.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
