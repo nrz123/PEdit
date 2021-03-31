@@ -5,7 +5,7 @@
 #include <winnt.h>
 using namespace std;
 typedef struct _IMAGE_DATA_DIRECTORY_RAW{
-	DWORD	SectionIndex;
+	int	SectionIndex;
 	DWORD   OffsetAddress;
 	DWORD   Size;
 } IMAGE_DATA_DIRECTORY_RAW, * PIMAGE_DATA_DIRECTORY_RAW;
@@ -18,7 +18,8 @@ private:
 	IMAGE_DATA_DIRECTORY_RAW DataDirectoryRaw[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
 	char** Sections;
 public:
-	PE(string fileName);
-	void exportToFile(string fileName);
+	PE(string);
+	void exportToFile(string);
+	void insertCode(unsigned char*);
 };
 
