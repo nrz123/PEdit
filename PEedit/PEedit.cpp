@@ -12,7 +12,9 @@ int insertCode() {
 }
 int main()
 {
+	
 	PE p("D:\\project\\HelloWord\\Release\\HelloWord.exe");
 	p.insertCode((unsigned char*)insertCode);
 	p.exportToFile("D:\\project\\HelloWord\\Release\\HelloWordNew.exe");
+	
 }

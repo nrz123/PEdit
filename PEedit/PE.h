@@ -3,6 +3,7 @@
 #include <fstream> 
 #include <Windows.h>
 #include <winnt.h>
+#include < vector> 
 using namespace std;
 typedef struct _IMAGE_DATA_DIRECTORY_RAW{
 	int	SectionIndex;
@@ -17,8 +18,12 @@ private:
 	IMAGE_SECTION_HEADER* SectionHeaders;
 	IMAGE_DATA_DIRECTORY_RAW DataDirectoryRaw[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
 	char** Sections;
+	vector< DWORD >* SectionsReloc;
+	DWORD VirtualToSectionIndex(DWORD);
+	DWORD VirtualToRawAddress(DWORD);
 public:
 	PE(string);
+	~PE();
 	void exportToFile(string);
 	void insertCode(unsigned char*);
 };
