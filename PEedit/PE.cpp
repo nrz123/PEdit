@@ -119,13 +119,18 @@ void PE::insertCode(unsigned char* code) {
 	DWORD& SizeOfRawData = SectionHeaders[1].SizeOfRawData;
 	VirtualSize += codeSize;
 	SizeOfRawData = ceil((double)VirtualSize / 0x200)*0x200;
-	Sections[1] = new char[SizeOfRawData];
+
+
+
+
+	char *Section = new char[SizeOfRawData];
 	for (int i = 0; i < codeSize; i++) {
-		Sections[1][i] = code[i];
+		Section[i] = code[i];
 	}
 	for (int i = 0; i < VirtualSize; i++) {
-		Sections[1][i + codeSize] = Sections[0][i];
+		Section[i + codeSize] = Sections[1][i];
 	}
+	Sections[1] = Section;
 	for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++) {
 		if (DataDirectoryRaw[i].SectionIndex == 1)
 		{
