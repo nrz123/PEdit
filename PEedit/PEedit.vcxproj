@@ -139,11 +139,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AddrTrans.cpp" />
     <ClCompile Include="PE.cpp" />
     <ClCompile Include="PEedit.cpp" />
+    <ClCompile Include="Pointer.cpp" />
+    <ClCompile Include="Reloc.cpp" />
+    <ClCompile Include="Section.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AddrTrans.h" />
     <ClInclude Include="PE.h" />
+    <ClInclude Include="Pointer.h" />
+    <ClInclude Include="Reloc.h" />
+    <ClInclude Include="Section.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
