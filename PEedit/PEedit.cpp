@@ -4,6 +4,7 @@
 #include "PE.h"
 int main()
 {
-	PE p("D:\\project\\HelloWord\\Release\\HelloWord.exe");
-	p.exportToFile("D:\\project\\HelloWord\\Release\\HelloWordNew.exe");
+	PE p("1.exe");
+	p.pack();
+	p.exportToFile("2.exe");
 }
