@@ -14,7 +14,7 @@ private:
 public:
 	PE(string fileName);
 	~PE();
-	void pack();
+	void insert();
 	void exportToFile(string fileName);
 };
 

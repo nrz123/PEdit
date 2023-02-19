@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{ed6d081e-411a-469a-8fa1-d452a721346a}</ProjectGuid>
+    <ProjectGuid>{c6fd3d28-5803-4371-a554-9c040253fa4f}</ProjectGuid>
     <RootNamespace>PEDLL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>

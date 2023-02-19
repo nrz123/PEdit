@@ -4,7 +4,15 @@
 #include "PE.h"
 int main()
 {
+#if 1
 	PE p("1.exe");
-	p.pack();
+	p.insert();
 	p.exportToFile("2.exe");
+#else
+	HMODULE hmod = LoadLibrary("PEDLL.dll"); //load dll
+	void (* insert)();
+	insert = (void (*)())GetProcAddress(hmod, "insert");
+	insert();
+	FreeLibrary(hmod);
+#endif
 }
