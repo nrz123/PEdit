@@ -14,32 +14,26 @@ mov r13,gs:[60h]
 mov r13,[r13+10h]
 add r12,r13
 add r15,r13
-xor r14,r14
 mov r14d,dword ptr [r15+3ch]
 add r14,r15
 
 mov r10,qword ptr [r14+30h]
-xor rdx,rdx
 mov edx,dword ptr [r14+0b0h]
 add rdx,r15
-xor r8,r8
 mov r8d,dword ptr [r14+0b4h]
 add r8,rdx
 
 relocloop:
 cmp rdx,r8
-jz relocout                                                                                                                       
-xor rax,rax
+jz relocout
 mov eax,dword ptr [rdx]
-xor rcx,rcx
 mov ecx,dword ptr [rdx+4]
 add rcx,rdx
 add rdx,8
 rloop:
 cmp rdx,rcx
 jz relocloop
-xor r9,r9
-mov r9w,word ptr [rdx]
+movzx r9,word ptr [rdx]
 add rdx,2
 cmp r9,0
 jz rloop
@@ -53,16 +47,13 @@ mov qword ptr [r9],r11
 jmp rloop
 relocout:
 
-xor rdx,rdx
-mov edx,dword ptr [r14+88h]
-add rdx,r15
-xor rax,rax
-mov eax,[rdx+1ch]
+mov eax,dword ptr [r14+88h]
 add rax,r15
-xor rbx,rbx
-mov ebx,dword ptr [rax]
-add rbx,r15
-call rbx
+mov eax,dword ptr [rax+1ch]
+add rax,r15
+mov eax,dword ptr [rax]
+add rax,r15
+call rax
 jmp r12
 cend:
 ret

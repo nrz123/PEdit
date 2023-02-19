@@ -1,2 +1,2 @@
 #pragma once	
-EXTERN_C void* insertdll(unsigned long long& size);
+EXTERN_C void* insertdll(ULONGLONG& size);
