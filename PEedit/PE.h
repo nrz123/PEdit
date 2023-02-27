@@ -11,6 +11,8 @@ private:
 	IMAGE_NT_HEADERS NtHeader;
 	IMAGE_SECTION_HEADER* SectionHeaders{};
 	char* Sections{};
+	char* Extra{};
+	ULONGLONG elen{};
 public:
 	PE(string fileName);
 	~PE();

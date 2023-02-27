@@ -19,6 +19,15 @@ PE::PE(string fileName)
 		in.seekg(SectionHeaders[i].PointerToRawData);
 		in.read(Sections + SectionHeaders[i].VirtualAddress, SectionHeaders[i].SizeOfRawData);
 	}
+	ULONGLONG send = in.tellg();
+	in.seekg(0,ios::end);
+	ULONGLONG fend = in.tellg();
+	elen = fend - send;
+	if (elen > 0) {
+		Extra = new char[elen];
+		in.seekg(send);
+		in.read(Extra, elen);
+	}
 	in.close();
 }
 PE::~PE()
@@ -27,6 +36,8 @@ PE::~PE()
 		delete SectionHeaders;
 	if (Sections != nullptr)
 		delete Sections;
+	if (Extra != nullptr)
+		delete Extra;
 }
 void PE::insert()
 {
@@ -71,6 +82,9 @@ void PE::exportToFile(string filename)
 	for (int i = 0; i < NtHeader.FileHeader.NumberOfSections; i++) {
 		out.seekp(SectionHeaders[i].PointerToRawData);
 		out.write(Sections + SectionHeaders[i].VirtualAddress, SectionHeaders[i].SizeOfRawData);
+	}
+	if (Extra) {
+		out.write(Extra, elen);
 	}
 	out.close();
 }
