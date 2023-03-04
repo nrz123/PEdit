@@ -157,7 +157,12 @@ mov eax,dword ptr [rax+1ch]
 add rax,r15
 mov eax,dword ptr [rax]
 add rax,r15
+
+;mov eax,dword ptr [r14+28h]
+;add rax,r15
+push rax
 call rax
+pop rax
 jmp r12
 cend:
 ret
