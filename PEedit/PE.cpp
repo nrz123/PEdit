@@ -43,7 +43,8 @@ void PE::insert()
 {
 	ULONGLONG csize{};
 	void* insert = insertdll(csize);
-	PE dflie("PEDLL.dll");
+	PE dflie("../x64/Release/PEDLL.dll");
+	//PE dflie("../x64/Release/PEinsert.exe");
 	DWORD vaml = NtHeader.OptionalHeader.SectionAlignment - 1;
 	DWORD isize = dflie.NtHeader.OptionalHeader.SizeOfImage + csize;
 	isize = (isize + vaml) & ~vaml;
