@@ -63,9 +63,8 @@ void PE::insert()
 	p = (ULONGLONG*)(ibuf + 0xc);
 	*p = (ULONGLONG)NtHeader.OptionalHeader.SizeOfImage;
 	IMAGE_SECTION_HEADER& sheader = SectionHeaders[NtHeader.FileHeader.NumberOfSections - 1];
-	sheader.SizeOfRawData += isize;
-	sheader.Misc.VirtualSize += isize;
-	sheader.Misc.VirtualSize = (sheader.Misc.VirtualSize + vaml) & ~vaml;
+	sheader.SizeOfRawData = NtHeader.OptionalHeader.SizeOfImage - sheader.VirtualAddress + isize;
+	sheader.Misc.VirtualSize = NtHeader.OptionalHeader.SizeOfImage - sheader.VirtualAddress + isize;
 	sheader.Characteristics = 0xE0000080;
 	NtHeader.OptionalHeader.AddressOfEntryPoint = NtHeader.OptionalHeader.SizeOfImage + dflie.NtHeader.OptionalHeader.SizeOfImage;
 	NtHeader.OptionalHeader.SizeOfImage = size;

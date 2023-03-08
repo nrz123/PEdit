@@ -158,8 +158,21 @@ push rcx
 call repairImport
 mov rcx, qword ptr [rsp]
 call repairReloc
-pop rcx
 
+mov rcx, qword ptr [rsp]
+mov eax,dword ptr [rcx + 3ch]
+mov eax,dword ptr [rcx+rax+28h]
+add rax,rcx
+mov rdx,1h
+mov r8,0
+sub rsp,28h
+push r8
+push rdx
+push rcx
+call rax
+add rsp,40h
+
+pop rcx
 mov eax,dword ptr [rcx + 3ch]
 mov eax,dword ptr [rcx + rax + 88h]
 mov eax,dword ptr [rcx + rax + 1ch]
