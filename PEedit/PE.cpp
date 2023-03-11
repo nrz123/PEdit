@@ -42,7 +42,7 @@ PE::~PE()
 void PE::insert()
 {
 	ULONGLONG csize{};
-	void* insert = insertdll(csize);
+	void* insert = insert_dll(csize);
 	PE dflie("../x64/Release/PEDLL.dll");
 	//PE dflie("../x64/Release/PEinsert.exe");
 	DWORD vaml = NtHeader.OptionalHeader.SectionAlignment - 1;

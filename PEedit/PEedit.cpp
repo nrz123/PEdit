@@ -25,9 +25,6 @@ int main()
 	ULONGLONG hash = GetHash("LoadLibraryA");
 	printf("result of hash is %.16llx\n", hash);
 	HMODULE hmod = LoadLibrary("PEDLL.dll"); //load dll
-	void (* insert)();
-	insert = (void (*)())GetProcAddress(hmod, "insert");
-	insert();
 	FreeLibrary(hmod);
 #endif
 }
