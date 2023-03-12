@@ -58,10 +58,10 @@ void PE::insert()
 	memcpy(dbuf + dflie.DosHeader.e_lfanew, (char*)(&dflie.NtHeader), sizeof(IMAGE_NT_HEADERS));
 	char* ibuf = dbuf + dflie.NtHeader.OptionalHeader.SizeOfImage;
 	memcpy(ibuf, insert, csize);
-	ULONGLONG* p = (ULONGLONG*)(ibuf + 0x2);
-	*p = (ULONGLONG)NtHeader.OptionalHeader.AddressOfEntryPoint;
-	p = (ULONGLONG*)(ibuf + 0xc);
-	*p = (ULONGLONG)NtHeader.OptionalHeader.SizeOfImage;
+	DWORD* p = (DWORD*)(ibuf + 0x1);
+	*p = NtHeader.OptionalHeader.AddressOfEntryPoint;
+	p = (DWORD*)(ibuf + 0x6);
+	*p = NtHeader.OptionalHeader.SizeOfImage;
 	IMAGE_SECTION_HEADER& sheader = SectionHeaders[NtHeader.FileHeader.NumberOfSections - 1];
 	sheader.SizeOfRawData = NtHeader.OptionalHeader.SizeOfImage - sheader.VirtualAddress + isize;
 	sheader.Misc.VirtualSize = NtHeader.OptionalHeader.SizeOfImage - sheader.VirtualAddress + isize;

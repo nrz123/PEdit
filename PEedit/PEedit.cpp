@@ -14,7 +14,6 @@ ULONGLONG GetHash(const char* fun_name)
 	}
 	return digest;
 }
-
 int main()
 {
 #if 1
@@ -24,7 +23,8 @@ int main()
 #else
 	ULONGLONG hash = GetHash("LoadLibraryA");
 	printf("result of hash is %.16llx\n", hash);
-	HMODULE hmod = LoadLibrary("PEDLL.dll"); //load dll
+	HMODULE hmod = LoadLibrary("../x64/Release/PEDLL.dll"); //load dll
+	getchar();
 	FreeLibrary(hmod);
 #endif
 }

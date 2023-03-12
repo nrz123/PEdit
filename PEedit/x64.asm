@@ -8,8 +8,8 @@ sub rdx, rax
 mov qword ptr [rcx], rdx
 ret
 code_start:
-mov rdi, 1234567812345678h   ;入口
-mov rsi, 1234567812345678h   ;插入代码偏移
+mov edi, 12345678h   ;入口
+mov esi, 12345678h   ;插入代码偏移
 jmp main_start
 
 function_out:
@@ -108,6 +108,19 @@ fit_loop:
 mov rdx, qword ptr [rbx + rdi]
 test rdx, rdx
 jz fit_out
+mov rax,08000000000000000h
+test rdx,rax
+jz fit_next
+mov edx, edx
+mov eax, dword ptr [rcx + 3ch] 
+mov eax, dword ptr [rcx + rax + 88h]
+mov eax, dword ptr [rcx + rax + 1ch]
+add rax, rcx
+mov edx, dword ptr [rax + 4 * rdx - 4]
+add rdx, rcx
+mov qword ptr [rbx + rdi], rdx
+jmp fit_continue
+fit_next:
 add rdx, rbx
 add rdx, 2
 mov rax, qword ptr [rbp - 8h]
@@ -119,6 +132,7 @@ call rax
 add rsp,18h
 mov rcx, qword ptr [rbp - 18h]
 mov qword ptr [rbx + rdi], rax
+fit_continue:
 add rdi, 8h
 jmp fit_loop
 fit_out:
@@ -146,10 +160,10 @@ reloc_item_loop:
 cmp edi, dword ptr [rsi + 4h]
 jz reloc_item_loop_out
 movzx rcx,word ptr [rsi + rdi]
-add rdi, 2h
+add edi, 2h
 test rcx,rcx
 jz reloc_item_loop
-and cx,0fffh
+and cx, 0fffh
 add ecx, dword ptr [rsi]
 sub qword ptr [rbx + rcx], rax
 add qword ptr [rbx + rcx], rbx
