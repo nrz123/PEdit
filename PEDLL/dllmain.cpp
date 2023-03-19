@@ -32,7 +32,7 @@ void connectserver()
 			struct hostent* hptr;
 			while ((hptr = gethostbyname("localhost")) == NULL);
 			ServerAddr.sin_addr.S_un.S_addr = *((ULONG*)(hptr->h_addr));
-			while ((s = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED)) == 0);
+			while ((s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == 0);
 			int keepAlive = 1;
 			setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, (const char*)&keepAlive, sizeof(keepAlive));
 			struct tcp_keepalive in_keep_alive = { 0 };

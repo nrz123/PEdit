@@ -10,13 +10,14 @@ private:
 	IMAGE_DOS_HEADER DosHeader;
 	IMAGE_NT_HEADERS NtHeader;
 	IMAGE_SECTION_HEADER* SectionHeaders{};
-	char* Sections{};
-	char* Extra{};
-	ULONGLONG elen{};
+	char* VirtualIMG{};
+	FILE* in{};
+	long intell{};
 public:
-	PE(string fileName);
+	PE(const char* fileName);
 	~PE();
-	void insert();
-	void exportToFile(string fileName);
+	void insert(char* code, ULONGLONG& size, ULONGLONG& enter);
+	char* DLLCode(ULONGLONG& size, ULONGLONG& enter);
+	void exportToFile(const char* fileName);
 };
 

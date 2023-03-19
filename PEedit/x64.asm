@@ -1,17 +1,49 @@
 .data
 .code
 
-insert_dll proc
-mov rax, code_start
-mov rdx, code_end
+enter_code proc
+mov rax, enter_code_start
+mov rdx, enter_code_end
 sub rdx, rax
 mov qword ptr [rcx], rdx
 ret
-code_start:
+enter_code_start:
+call code_enter
+code_enter: 
+pop	rax
+sub	rax,5h
 mov edi, 12345678h   ;入口
-mov esi, 12345678h   ;插入代码偏移
-jmp main_start
+mov rsi, 1234567812345678h   ;插入代码入口
+sub rsp, 8h
+sub rax, rsi
+call rax
+add rsp, 8h
+mov rax, gs:[60h]
+add rdi, [rax + 10h]
+jmp rdi
+enter_code_end:
+enter_code endp
 
+insert_dll proc
+mov rax, insert_dll_start
+mov rdx, insert_dll_end
+sub rdx, rax
+mov qword ptr [rcx], rdx
+ret
+insert_dll_start:
+call insert_dll_enter
+insert_dll_enter: 
+pop	rax
+sub	rax,5h
+push rbp
+push rbx
+push rsi
+push rdi
+mov rbp, rsp
+mov rsi, 1234567812345678h   ;dll基址
+sub rax, rsi
+mov rsi, rax
+jmp main_start
 function_out:
 mov rsp, rbp
 pop rdi
@@ -19,7 +51,6 @@ pop rsi
 pop rbx
 pop rbp
 ret
-
 find_function:
 push rbp
 push rbx
@@ -72,7 +103,6 @@ add rdx, rbx
 mov eax, dword ptr [rdx + 4 * rdi]
 add rax, rbx
 jmp function_out
-
 repair_import:
 push rbp
 push rbx
@@ -138,7 +168,6 @@ jmp fit_loop
 fit_out:
 add rsi,14h
 jmp import_loop
-
 repair_reloc:
 push rbp
 push rbx
@@ -171,17 +200,12 @@ jmp reloc_item_loop
 reloc_item_loop_out:
 add rsi, rdi
 jmp reloc_loop
-
 main_start:
 sub rsp, 28h
-mov rbx, gs:[60h]
-add rdi, [rbx + 10h]
-add rsi, [rbx + 10h]
 mov rcx, rsi
 call repair_import
 mov rcx, rsi
 call repair_reloc
-
 mov eax, dword ptr [rsi + 3ch]
 mov eax, dword ptr [rsi + rax + 28h]
 add rax, rsi
@@ -193,10 +217,8 @@ push r8
 push rdx
 push rcx
 call rax
-add rsp, 48h
-jmp rdi
-code_end:
-ret
+jmp function_out
+insert_dll_end:
 insert_dll endp
 
 end

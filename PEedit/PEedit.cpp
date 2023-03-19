@@ -2,7 +2,6 @@
 //
 
 #include "PE.h"
-#include <winternl.h>
 ULONGLONG GetHash(const char* fun_name)
 {
 	ULONGLONG digest = 0;
@@ -18,12 +17,15 @@ int main()
 {
 #if 1
 	PE p("1.exe");
-	p.insert();
+	ULONGLONG size{}, enter{};
+	char* code = p.DLLCode(size, enter);
+	p.insert(code, size, enter);
+	delete[] code;
 	p.exportToFile("2.exe");
 #else
-	ULONGLONG hash = GetHash("LoadLibraryA");
-	printf("result of hash is %.16llx\n", hash);
-	HMODULE hmod = LoadLibrary("../x64/Release/PEDLL.dll"); //load dll
+	//ULONGLONG hash = GetHash("LoadLibraryA");
+	//printf("result of hash is %.16llx\n", hash);
+	HMODULE hmod = LoadLibrary("../x64/Release/PEDLL.dll");
 	getchar();
 	FreeLibrary(hmod);
 #endif
