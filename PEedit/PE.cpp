@@ -31,52 +31,74 @@ PE::~PE()
 	if (in != nullptr)
 		fclose(in);
 }
-char* PE::DLLCode(ULONGLONG& size, ULONGLONG& enter)
+char* PE::DLLCode(ULONGLONG& size, ULONGLONG& usize)
 {
 	PE dflie("../x64/Release/PEDLL.dll");
-	size = dflie.NtHeader.OptionalHeader.SizeOfImage;
-	void* insert_base = insert_dll(enter);
-	ULONGLONG code_size = enter;
-	DWORD vaml = dflie.NtHeader.OptionalHeader.SectionAlignment - 1;
-	enter = (enter + vaml) & ~vaml;
-	size += enter;
+	DWORD vaml = NtHeader.OptionalHeader.SectionAlignment - 1;
+	ULONGLONG code_size{};
+	void* insert_base = insert_dll(code_size);
+	ULONGLONG code_vaml = (code_size + vaml) & ~vaml;
+	usize = size = dflie.NtHeader.OptionalHeader.SizeOfImage + code_vaml;
 	char* buf = new char[size];
 	memset(buf, 0, size);
-	memcpy(buf, dflie.VirtualIMG, dflie.NtHeader.OptionalHeader.SizeOfImage);
-	memcpy(buf, (char*)(&dflie.DosHeader), sizeof(IMAGE_DOS_HEADER));
-	memcpy(buf + dflie.DosHeader.e_lfanew, (char*)(&dflie.NtHeader), sizeof(IMAGE_NT_HEADERS));
-	char* buf_enter = buf + dflie.NtHeader.OptionalHeader.SizeOfImage;
-	memcpy(buf_enter, insert_base, code_size);
-	ULONGLONG* p = (ULONGLONG*)(buf_enter + 0x13);
-	*p = dflie.NtHeader.OptionalHeader.SizeOfImage;
+	memcpy(buf, insert_base, code_size);
+	ULONGLONG* p = (ULONGLONG*)(buf + 0x13);
+	*p = code_vaml;
+	char* buf_base = buf + code_vaml;
+	memcpy(buf_base, dflie.VirtualIMG, dflie.NtHeader.OptionalHeader.SizeOfImage);
+	memcpy(buf_base, (char*)(&dflie.DosHeader), sizeof(IMAGE_DOS_HEADER));
+	memcpy(buf_base + dflie.DosHeader.e_lfanew, (char*)(&dflie.NtHeader), sizeof(IMAGE_NT_HEADERS));
 	return buf;
 }
-void PE::insert(char* code, ULONGLONG& size, ULONGLONG& enter)
+char* PE::CopyCode(char* code, ULONGLONG& size, ULONGLONG& usize)
+{
+	ULONGLONG code_size{};
+	void* copy_base = copy_code(code_size);
+	DWORD vaml = NtHeader.OptionalHeader.SectionAlignment - 1;
+	ULONGLONG code_vaml = (code_size + vaml) & ~vaml;
+	ULONGLONG old_size = size;
+	size += code_vaml;
+	usize += size;
+	char* buf = new char[size];
+	memcpy(buf, copy_base, code_size);
+	ULONGLONG* p = (ULONGLONG*)(buf + 0x13);
+	*p = code_vaml;
+	p = (ULONGLONG*)(buf + 0x1d);
+	*p = size;
+	p = (ULONGLONG*)(buf + 0x27);
+	*p = old_size;
+	memcpy(buf + code_vaml, code, old_size);
+	delete[] code;
+	return buf;
+}
+void PE::InsertCode(char* code, ULONGLONG& size, ULONGLONG& usize)
 {
 	ULONGLONG code_size{};
 	void* enter_base = enter_code(code_size);
-	ULONGLONG isize = size + code_size;
 	DWORD vaml = NtHeader.OptionalHeader.SectionAlignment - 1;
-	isize = (isize + vaml) & ~vaml;
-	ULONGLONG buf_size = NtHeader.OptionalHeader.SizeOfImage + isize;
+	ULONGLONG code_vaml = (code_size + vaml) & ~vaml;
+	ULONGLONG buf_size = NtHeader.OptionalHeader.SizeOfImage + code_vaml + size;
 	char* buf = new char[buf_size];
 	memset(buf, 0, buf_size);
 	memcpy(buf, VirtualIMG, NtHeader.OptionalHeader.SizeOfImage);
-	memcpy(buf + NtHeader.OptionalHeader.SizeOfImage, code, size);
-	char* dbuf = buf + NtHeader.OptionalHeader.SizeOfImage + size;
-	memcpy(dbuf, enter_base, code_size);
-	DWORD* p = (DWORD*)(dbuf + 0xB);
+	SectionHeaders = (IMAGE_SECTION_HEADER*)(buf + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS));
+	char* buf_enter = buf + NtHeader.OptionalHeader.SizeOfImage;
+	memcpy(buf_enter, enter_base, code_size);
+	DWORD* p = (DWORD*)(buf_enter + 0xB);
 	*p = NtHeader.OptionalHeader.AddressOfEntryPoint;
-	ULONGLONG* pL = (ULONGLONG*)(dbuf + 0x11);
-	*pL = enter;
+	ULONGLONG* pL = (ULONGLONG*)(buf_enter + 0x11);
+	*pL = code_vaml;
+	memcpy(buf_enter + code_vaml, code, size);
+	delete[] code;
 	IMAGE_SECTION_HEADER& sheader = SectionHeaders[NtHeader.FileHeader.NumberOfSections - 1];
-	sheader.SizeOfRawData = NtHeader.OptionalHeader.SizeOfImage - sheader.VirtualAddress + isize;
-	sheader.Misc.VirtualSize = NtHeader.OptionalHeader.SizeOfImage - sheader.VirtualAddress + isize;
+	sheader.SizeOfRawData = NtHeader.OptionalHeader.SizeOfImage - sheader.VirtualAddress + code_vaml + size;
+	sheader.Misc.VirtualSize = NtHeader.OptionalHeader.SizeOfImage - sheader.VirtualAddress + code_vaml + usize;
 	sheader.Characteristics = 0xE0000080;
-	NtHeader.OptionalHeader.AddressOfEntryPoint = NtHeader.OptionalHeader.SizeOfImage + size;
-	NtHeader.OptionalHeader.SizeOfImage = buf_size;
+	NtHeader.OptionalHeader.AddressOfEntryPoint = NtHeader.OptionalHeader.SizeOfImage;
+	NtHeader.OptionalHeader.SizeOfImage = sheader.VirtualAddress + sheader.Misc.VirtualSize;
 	delete[] VirtualIMG;
 	VirtualIMG = buf;
+	
 }
 void PE::exportToFile(const char* filename)
 {
@@ -92,7 +114,7 @@ void PE::exportToFile(const char* filename)
 		fseek(out, SectionHeaders[i].PointerToRawData, 0);
 		fwrite(VirtualIMG + SectionHeaders[i].VirtualAddress, 1, SectionHeaders[i].SizeOfRawData, out);
 	}
-	int outell = ftell(out);
+	/*int outell = ftell(out);
 	DWORD faml = NtHeader.OptionalHeader.FileAlignment - 1;
 	outell = (outell + faml) & ~faml;
 	fseek(out, outell, 0);
@@ -102,6 +124,6 @@ void PE::exportToFile(const char* filename)
 	{
 		int len = fread(buf, 1, 1024, in);
 		fwrite(buf, 1, len, out);
-	}
+	}*/
 	fclose(out);
 }

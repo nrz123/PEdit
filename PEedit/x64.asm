@@ -1,6 +1,43 @@
 .data
 .code
 
+copy_code proc
+mov rax, copy_code_start
+mov rdx, copy_code_end
+sub rdx, rax
+mov qword ptr [rcx], rdx
+ret
+copy_code_start:
+call code_enter
+code_enter: 
+pop	rax
+sub	rax,5h
+push rbp
+push rbx
+push rsi
+push rdi
+mov rbp, rsp
+mov rsi,1234567812345678h
+mov rdi,1234567812345678h
+mov rcx,1234567812345678h
+add rsi,rax
+add rdi,rax
+mov rdx,rdi
+copy_loop:
+lodsb
+stosb
+loop copy_loop
+push rdx
+call rdx
+mov rsp, rbp
+pop rdi
+pop rsi
+pop rbx
+pop rbp
+ret
+copy_code_end:
+copy_code endp
+
 enter_code proc
 mov rax, enter_code_start
 mov rdx, enter_code_end
@@ -14,10 +51,10 @@ pop	rax
 sub	rax,5h
 mov edi, 12345678h   ;入口
 mov rsi, 1234567812345678h   ;插入代码入口
-sub rsp, 8h
-sub rax, rsi
+add rax, rsi
+push rax
 call rax
-add rsp, 8h
+pop rax
 mov rax, gs:[60h]
 add rdi, [rax + 10h]
 jmp rdi
@@ -31,8 +68,8 @@ sub rdx, rax
 mov qword ptr [rcx], rdx
 ret
 insert_dll_start:
-call insert_dll_enter
-insert_dll_enter: 
+call code_enter
+code_enter: 
 pop	rax
 sub	rax,5h
 push rbp
@@ -41,7 +78,7 @@ push rsi
 push rdi
 mov rbp, rsp
 mov rsi, 1234567812345678h   ;dll基址
-sub rax, rsi
+add rax, rsi
 mov rsi, rax
 jmp main_start
 function_out:

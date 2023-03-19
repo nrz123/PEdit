@@ -16,8 +16,9 @@ private:
 public:
 	PE(const char* fileName);
 	~PE();
-	void insert(char* code, ULONGLONG& size, ULONGLONG& enter);
-	char* DLLCode(ULONGLONG& size, ULONGLONG& enter);
+	void InsertCode(char* code, ULONGLONG& size, ULONGLONG& usize);
+	char* CopyCode(char* code, ULONGLONG& size, ULONGLONG& usize);
+	char* DLLCode(ULONGLONG& size, ULONGLONG& usize);
 	void exportToFile(const char* fileName);
 };
 

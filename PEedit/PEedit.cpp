@@ -17,10 +17,13 @@ int main()
 {
 #if 1
 	PE p("1.exe");
-	ULONGLONG size{}, enter{};
-	char* code = p.DLLCode(size, enter);
-	p.insert(code, size, enter);
-	delete[] code;
+	ULONGLONG size{}, usize{};
+	char* code = p.DLLCode(size, usize);
+	code = p.CopyCode(code, size, usize);
+	code = p.CopyCode(code, size, usize);
+	code = p.CopyCode(code, size, usize);
+	code = p.CopyCode(code, size, usize);
+	p.InsertCode(code, size, usize);
 	p.exportToFile("2.exe");
 #else
 	//ULONGLONG hash = GetHash("LoadLibraryA");
