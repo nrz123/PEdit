@@ -114,7 +114,7 @@ void PE::exportToFile(const char* filename)
 		fseek(out, SectionHeaders[i].PointerToRawData, 0);
 		fwrite(VirtualIMG + SectionHeaders[i].VirtualAddress, 1, SectionHeaders[i].SizeOfRawData, out);
 	}
-	/*int outell = ftell(out);
+	int outell = ftell(out);
 	DWORD faml = NtHeader.OptionalHeader.FileAlignment - 1;
 	outell = (outell + faml) & ~faml;
 	fseek(out, outell, 0);
@@ -124,6 +124,6 @@ void PE::exportToFile(const char* filename)
 	{
 		int len = fread(buf, 1, 1024, in);
 		fwrite(buf, 1, len, out);
-	}*/
+	}
 	fclose(out);
 }
