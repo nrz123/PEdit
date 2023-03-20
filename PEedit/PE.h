@@ -16,9 +16,9 @@ private:
 public:
 	PE(const char* fileName);
 	~PE();
-	void InsertCode(char* code, ULONGLONG& size, ULONGLONG& usize);
-	char* CopyCode(char* code, ULONGLONG& size, ULONGLONG& usize);
-	char* DLLCode(ULONGLONG& size, ULONGLONG& usize);
+	void InsertCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment);
+	char* CopyCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment);
+	char* DLLCode(ULONGLONG& size, ULONGLONG& usize, DWORD& alignment);
 	void exportToFile(const char* fileName);
 };
 
