@@ -77,7 +77,7 @@ void PE::InsertCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignm
 	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
 	DWORD vaml = SectionAlignment - 1;
 	DWORD code_vaml = SectionAlignment - (code_size + alignment) % SectionAlignment;
-	ULONGLONG buf_size = NtHeader.OptionalHeader.SizeOfImage + code_vaml + code_size + size;
+	ULONGLONG buf_size = code_vaml + code_size + size + NtHeader.OptionalHeader.SizeOfImage;
 	buf_size = (buf_size + vaml) & ~vaml;
 	char* buf = new char[buf_size];
 	memset(buf, 0, buf_size);
