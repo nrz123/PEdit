@@ -121,8 +121,8 @@ namespace MyLzma {
 #undef RC_NORMALIZE
 
 
-int upx_lzma_compress      (const unsigned char* src, unsigned  src_len,
-                                   unsigned char* dst, unsigned* dst_len)
+int lzma_compress(const unsigned char* src, unsigned  src_len,
+    unsigned char* dst, unsigned* dst_len)
 {
     int r = -1;
     HRESULT rh;
@@ -215,9 +215,9 @@ error:
 #undef _LZMA_LOC_OPT
 #include "C/7zip/Compress/LZMA_C/LzmaDecode.h"
 #include "C/7zip/Compress/LZMA_C/LzmaDecode.c"
-
-int upx_lzma_decompress    ( const unsigned char* src, unsigned  src_len,
-                                   unsigned char* dst, unsigned* dst_len)
+#include <iostream>
+int lzma_decompress(const unsigned char* src, unsigned  src_len,
+    unsigned char* dst, unsigned* dst_len)
 {
     CLzmaDecoderState s; 
     memset(&s, 0, sizeof(s));

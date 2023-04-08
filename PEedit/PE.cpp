@@ -31,6 +31,45 @@ PE::~PE()
 	if (in != nullptr)
 		fclose(in);
 }
+char* PE::CompressCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment)
+{
+	HMODULE hmod = LoadLibrary("../x64/Release/LZMA_DECODE.dll");
+	int (*lzma_compress)(const unsigned char* src, unsigned  src_len,
+		unsigned char* dst, unsigned* dst_len);
+	lzma_compress = (int (*)(const unsigned char* src, unsigned  src_len, unsigned char* dst, unsigned* dst_len))GetProcAddress(hmod, "lzma_compress");
+	unsigned dest_size = size;
+	unsigned char* compress_buf = new unsigned char[size];
+	lzma_compress((unsigned char*)code, size, compress_buf, &dest_size);
+	ULONGLONG code_size{};
+	void* code_base = decode_code(code_size);
+	PE dflie("../x64/Release/LZMA_DECODE.dll");
+	//lzma_decompress(buf, dest_size, buf_out, &dst_out);
+	IMAGE_EXPORT_DIRECTORY* pIMAGE_EXPORT_DIRECTORY = (IMAGE_EXPORT_DIRECTORY*)(dflie.VirtualIMG + dflie.NtHeader.OptionalHeader.DataDirectory[0].VirtualAddress);
+	DWORD* function_base = (DWORD*)(dflie.VirtualIMG + pIMAGE_EXPORT_DIRECTORY->AddressOfFunctions);
+	unsigned decode_size = 2733;
+	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
+	ULONGLONG old_size = size;
+	size = code_size + decode_size + dest_size;
+	alignment = (alignment + size) % SectionAlignment;
+	usize += size;
+	char* buf = new char[size];
+	memset(buf, 0, size);
+	memcpy(buf, code_base, code_size);
+	ULONGLONG* p = (ULONGLONG*)(buf + 0x13);
+	*p = code_size + decode_size + 2;
+	p = (ULONGLONG*)(buf + 0x1d);
+	*p = size;
+	p = (ULONGLONG*)(buf + 0x27);
+	*p = dest_size - 2;
+	p = (ULONGLONG*)(buf + 0x31);
+	*p = old_size;
+	memcpy(buf + code_size, dflie.VirtualIMG + function_base[0], decode_size);
+	memcpy(buf + code_size + decode_size, compress_buf, dest_size);
+	delete[] code;
+	delete[] compress_buf;
+	FreeLibrary(hmod);
+	return buf;
+}
 char* PE::DLLCode(ULONGLONG& size, ULONGLONG& usize, DWORD& alignment)
 {
 	PE dflie("../x64/Release/PEDLL.dll");
@@ -55,8 +94,8 @@ char* PE::CopyCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignme
 	void* copy_base = copy_code(code_size);
 	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
 	ULONGLONG old_size = size;
-	alignment = (alignment + old_size + code_size) % SectionAlignment;
 	size += code_size;
+	alignment = (alignment + size) % SectionAlignment;
 	usize += size;
 	char* buf = new char[size];
 	memcpy(buf, copy_base, code_size);

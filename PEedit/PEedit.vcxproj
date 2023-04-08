@@ -141,12 +141,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="compress_lzma.cpp" />
     <ClCompile Include="PE.cpp" />
     <ClCompile Include="PEedit.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="compress.h" />
     <ClInclude Include="PE.h" />
     <ClInclude Include="x64.h" />
   </ItemGroup>

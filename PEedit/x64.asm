@@ -1,6 +1,70 @@
 .data
 .code
 
+decode_code proc
+mov rax, decode_code_start
+mov rdx, decode_code_end
+sub rdx, rax
+mov qword ptr [rcx], rdx
+ret
+decode_code_start:
+call code_enter
+code_enter: 
+pop	rax
+sub	rax,5h
+push rbp
+push rbx
+push rsi
+push rdi
+mov rbp, rsp
+mov rsi,1234567812345678h
+mov rdi,1234567812345678h
+mov rcx,1234567812345678h
+mov rdx,1234567812345678h
+add rsi,rax
+add rdi,rax
+sub rsp,12
+sub rsp,15980
+sub rsp,24
+lea rax,qword ptr [rsp+24]
+mov qword ptr [rsp+16],rax
+movzx rax,byte ptr [rsi - 2]
+and al,7
+mov dword ptr [rsp+8],eax
+movzx rax,byte ptr [rsi - 1]
+shr al,4
+mov dword ptr [rsp+4],eax
+movzx rax,byte ptr [rsi - 1]
+and al,15
+mov dword ptr [rsp],eax
+sub rsp,10h
+lea rax,qword ptr [rsp+08h]
+push rax
+push rdx
+push rdi
+lea rax,qword ptr [rsp+18h]
+push rax
+mov r9,qword ptr [rsp]
+push rcx
+mov r8,qword ptr [rsp]
+push rsi
+mov rdx,qword ptr [rsp]
+lea rax,qword ptr [rsp+40h]
+push rax
+mov rcx,qword ptr [rsp]
+call decode_code_end
+mov rsp, rbp
+sub rsp, 8
+call rdi
+mov rsp, rbp
+pop rdi
+pop rsi
+pop rbx
+pop rbp
+ret
+decode_code_end:
+decode_code endp
+
 copy_code proc
 mov rax, copy_code_start
 mov rdx, copy_code_end

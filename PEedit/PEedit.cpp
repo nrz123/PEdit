@@ -2,7 +2,6 @@
 //
 
 #include "PE.h"
-#include "compress.h"
 ULONGLONG GetHash(const char* fun_name)
 {
 	ULONGLONG digest = 0;
@@ -18,16 +17,26 @@ int main()
 {
 #if 1
 	PE p("1.exe");
-	ULONGLONG size=1000, usize{};
+	ULONGLONG size{}, usize{};
 	DWORD alignment{};
 	char* code = p.DLLCode(size, usize, alignment);
-	//code = p.CopyCode(code, size, usize, alignment);
-	unsigned char* buf = new unsigned char[size];
+	code = p.CompressCode(code, size, usize, alignment);
+	/*unsigned char* buf = new unsigned char[size];
 	unsigned char* buf_out = new unsigned char[size];
 	unsigned dest_size, dst_out= size, outPropsSize = 5;
 	unsigned char* outProps = new unsigned char[outPropsSize];
-	upx_lzma_compress((unsigned char*)code, size, buf, &dest_size);
-	upx_lzma_decompress(buf, dest_size, buf_out, &dst_out);
+
+	HMODULE hmod = LoadLibrary("../x64/Release/LZMA_DECODE.dll");
+	int (*lzma_compress)(const unsigned char* src, unsigned  src_len,
+		unsigned char* dst, unsigned* dst_len);
+	int (*lzma_decompress)(const unsigned char* src, unsigned  src_len,
+		unsigned char* dst, unsigned* dst_len);
+	lzma_compress = (int (*)(const unsigned char* src, unsigned  src_len,unsigned char* dst, unsigned* dst_len))GetProcAddress(hmod, "lzma_compress");
+
+	lzma_decompress = (int (*)(const unsigned char* src, unsigned  src_len,unsigned char* dst, unsigned* dst_len))GetProcAddress(hmod, "lzma_decompress");
+	lzma_compress((unsigned char*)code, size, buf, &dest_size);
+	lzma_decompress(buf, dest_size, buf_out, &dst_out);
+	FreeLibrary(hmod);*/
 
 	p.InsertCode(code, size, usize, alignment);
 	p.exportToFile("2.exe");
