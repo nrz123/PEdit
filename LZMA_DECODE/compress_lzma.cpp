@@ -30,21 +30,6 @@
 
 #include "C/Common/MyInitGuid.h"
 #include "C/7zip/Compress/LZMA/LZMAEncoder.h"
-
-struct lzma_compress_result_t
-{
-    unsigned pos_bits;              // pb
-    unsigned lit_pos_bits;          // lp
-    unsigned lit_context_bits;      // lc
-    unsigned dict_size;
-    unsigned fast_mode;
-    unsigned num_fast_bytes;
-    unsigned match_finder_cycles;
-    unsigned num_probs;             // (computed result)
-
-    void reset() { memset(this, 0, sizeof(*this)); }
-};
-
 namespace MyLzma {
 
     struct InStream : public ISequentialInStream, public CMyUnknownImp
@@ -121,87 +106,21 @@ namespace MyLzma {
 #undef RC_NORMALIZE
 
 
-int lzma_compress(const unsigned char* src, unsigned  src_len,
-    unsigned char* dst, unsigned* dst_len)
+int lzma_compress(const unsigned char* src, size_t  src_len,
+    unsigned char* dst, size_t* dst_len)
 {
-    int r = -1;
-    HRESULT rh;
-
-    MyLzma::InStream is; is.AddRef();
-    MyLzma::OutStream os; os.AddRef();
+    MyLzma::InStream is; 
+    is.AddRef();
+    MyLzma::OutStream os; 
+    os.AddRef();
     is.Init(src, src_len);
     os.Init(dst, *dst_len);
-
-    MyLzma::ProgressInfo progress; progress.AddRef();
-
+    MyLzma::ProgressInfo progress; 
+    progress.AddRef();
     NCompress::NLZMA::CEncoder enc;
-    const PROPID propIDs[8] = {
-        NCoderPropID::kPosStateBits,        // 0  pb    _posStateBits(2)
-        NCoderPropID::kLitPosBits,          // 1  lp    _numLiteralPosStateBits(0)
-        NCoderPropID::kLitContextBits,      // 2  lc    _numLiteralContextBits(3)
-        NCoderPropID::kDictionarySize,      // 3  ds
-        NCoderPropID::kAlgorithm,           // 4  fm    _fastmode
-        NCoderPropID::kNumFastBytes,        // 5  fb
-        NCoderPropID::kMatchFinderCycles,   // 6  mfc   _matchFinderCycles, _cutValue
-        NCoderPropID::kMatchFinder          // 7  mf
-    };
-    PROPVARIANT pr[8];
-    const unsigned nprops = 8;
-    static const wchar_t matchfinder[] = L"BT4";
-    pr[7].vt = VT_BSTR; pr[7].bstrVal = ACC_PCAST(BSTR, ACC_UNCONST_CAST(wchar_t*, matchfinder));
-    pr[0].vt = pr[1].vt = pr[2].vt = pr[3].vt = VT_UI4;
-    pr[4].vt = pr[5].vt = pr[6].vt = VT_UI4;
-    lzma_compress_result_t res{};
-    res.pos_bits = 2;                   // 0 .. 4
-    res.lit_pos_bits = 0;                   // 0 .. 4
-    res.lit_context_bits = 3;                   // 0 .. 8
-    res.dict_size = 4 * 1024 * 1024;     // 1 .. 2**30
-    res.fast_mode = 2;
-    res.num_fast_bytes = 64;                  // 5 .. 273
-    res.match_finder_cycles = 0;
-    pr[0].uintVal = res.pos_bits;
-    pr[1].uintVal = res.lit_pos_bits;
-    pr[2].uintVal = res.lit_context_bits;
-    pr[3].uintVal = res.dict_size;
-    pr[4].uintVal = res.fast_mode;
-    pr[5].uintVal = res.num_fast_bytes;
-    pr[6].uintVal = res.match_finder_cycles;
-    try {
-        if (enc.SetCoderProperties(propIDs, pr, nprops) != S_OK)
-            goto error;
-        if (enc.WriteCoderProperties(&os) != S_OK)
-            goto error;
-        if (os.overflow) {
-            //r = UPX_E_OUTPUT_OVERRUN;
-            r = -3;
-            goto error;
-        }
-        os.b_pos = 0;
-        // extra stuff in first byte: 5 high bits convenience for stub decompressor
-        unsigned t = res.lit_context_bits + res.lit_pos_bits;
-        os.WriteByte(Byte((t << 3) | res.pos_bits));
-        os.WriteByte(Byte((res.lit_pos_bits << 4) | (res.lit_context_bits)));
-        rh = enc.Code(&is, &os, nullptr, nullptr, &progress);
-
-    }
-    catch (...) {
-        rh = E_OUTOFMEMORY;
-    }
-
-    if (rh == E_OUTOFMEMORY)
-        r = -2;
-    else if (os.overflow)
-    {
-        r = -3;
-    }
-    else if (rh == S_OK)
-    {
-        r = 0;
-    }
-
-error:
+    int result = enc.Code(&is, &os, nullptr, nullptr, &progress);
     *dst_len = (unsigned)os.b_pos;
-    return r;
+    return result;
 }
 
 
@@ -216,41 +135,15 @@ error:
 #include "C/7zip/Compress/LZMA_C/LzmaDecode.h"
 #include "C/7zip/Compress/LZMA_C/LzmaDecode.c"
 #include <iostream>
-int lzma_decompress(const unsigned char* src, unsigned  src_len,
-    unsigned char* dst, unsigned* dst_len)
+int lzma_decompress(const unsigned char* src, size_t  src_len,
+    unsigned char* dst, size_t* dst_len)
 {
-    CLzmaDecoderState s; 
-    memset(&s, 0, sizeof(s));
-    SizeT src_out = 0, dst_out = 0;
-    int r = -1;
-    int rh;
-
-    if (src_len < 3)
-        goto error;
-    s.Properties.pb = src[0] & 7;
-    s.Properties.lp = (src[1] >> 4);
-    s.Properties.lc = src[1] & 15;
-    if (s.Properties.pb >= 5) goto error;
-    if (s.Properties.lp >= 5) goto error;
-    if (s.Properties.lc >= 9) goto error;
-    // extra
-    if ((src[0] >> 3) != s.Properties.lc + s.Properties.lp) goto error;
-    src += 2; src_len -= 2;
-    s.Probs = (CProb*)malloc(sizeof(CProb) * LzmaGetNumProbs(&s.Properties));
-    if (!s.Probs)
-    {
-        r = -2;
-        goto error;
-    }
-    rh = LzmaDecode(&s, src, src_len, &src_out, dst, *dst_len, &dst_out);
-    if (rh == 0)
-    {
-        r = 0;
-        if (src_out != src_len)
-            r = -8;
-    }
-error:
-    *dst_len = dst_out;
-    free(s.Probs);
-    return r;
+    char Probs[15980];
+    CLzmaDecoderState s;
+    SizeT src_out = 0;
+    s.Properties.pb = 2;
+    s.Properties.lp = 0;
+    s.Properties.lc = 3;
+    s.Probs = (CProb*)Probs;
+    return LzmaDecode(&s, src, src_len, &src_out, dst, *dst_len, dst_len);
 }
