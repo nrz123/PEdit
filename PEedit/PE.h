@@ -16,10 +16,10 @@ private:
 public:
 	PE(const char* fileName);
 	~PE();
-	void InsertCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment);
-	char* CopyCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment);
-	char* DLLCode(ULONGLONG& size, ULONGLONG& usize, DWORD& alignment);
-	char* CompressCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment);
+	void InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
+	char* CopyCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
+	char* DLLCode(size_t& size, size_t& usize, DWORD& alignment);
+	char* CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
 	void exportToFile(const char* fileName);
 };
 

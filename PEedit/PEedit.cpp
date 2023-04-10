@@ -2,9 +2,9 @@
 //
 
 #include "PE.h"
-ULONGLONG GetHash(const char* fun_name)
+size_t GetHash(const char* fun_name)
 {
-	ULONGLONG digest = 0;
+	size_t digest = 0;
 	while (*fun_name)
 	{
 		digest = ((digest << 57) | (digest >> 7)); //循环右移 7 位
@@ -17,20 +17,13 @@ int main()
 {
 #if 1
 	PE p("1.exe");
-	ULONGLONG size{}, usize{};
+	size_t size{}, usize{};
 	DWORD alignment{};
 	char* code = p.DLLCode(size, usize, alignment);
-	code = p.CopyCode(code, size, usize, alignment);
-	code = p.CompressCode(code, size, usize, alignment);
-	code = p.CopyCode(code, size, usize, alignment);
-	code = p.CompressCode(code, size, usize, alignment);
-	code = p.CopyCode(code, size, usize, alignment);
-	code = p.CompressCode(code, size, usize, alignment);
-	code = p.CopyCode(code, size, usize, alignment);
 	code = p.CompressCode(code, size, usize, alignment);
 	/*unsigned char* buf = new unsigned char[size]; 
 	unsigned char* buf_out = new unsigned char[size];
-	ULONGLONG dest_size = size, dst_out = size, outPropsSize = 5;
+	size_t dest_size = size, dst_out = size, outPropsSize = 5;
 
 	HMODULE hmod = LoadLibrary("../x64/Release/LZMA_DECODE.dll");
 	int (*lzma_compress)(const unsigned char* src, size_t  src_len,
@@ -49,7 +42,7 @@ int main()
 	p.InsertCode(code, size, usize, alignment);
 	p.exportToFile("2.exe");
 #else
-	//ULONGLONG hash = GetHash("LoadLibraryA");
+	//size_t hash = GetHash("LoadLibraryA");
 	//printf("result of hash is %.16llx\n", hash);
 	HMODULE hmod = LoadLibrary("../x64/Release/PEDLL.dll");
 	getchar();

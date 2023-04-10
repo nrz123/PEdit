@@ -31,46 +31,42 @@ PE::~PE()
 	if (in != nullptr)
 		fclose(in);
 }
-char* PE::CompressCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment)
+char* PE::CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
 {
-	HMODULE hmod = LoadLibrary("../x64/Release/LZMA_DECODE.dll");
+	HMODULE hmod = LoadLibrary("LZMA_DECODE.dll");
 	int (*lzma_compress)(const unsigned char* src, size_t  src_len,
 		unsigned char* dst, size_t * dst_len);
 	lzma_compress = (int (*)(const unsigned char* src, size_t  src_len,
 		unsigned char* dst, size_t * dst_len))GetProcAddress(hmod, "lzma_compress");
-	ULONGLONG dest_size = size;
+	size_t dest_size = size;
 	unsigned char* compress_buf = new unsigned char[size];
 	lzma_compress((unsigned char*)code, size, compress_buf, &dest_size);
-	ULONGLONG code_size{};
+	size_t code_size{};
 	void* code_base = decode_code(code_size);
-	PE dflie("../x64/Release/LZMA_DECODE.dll");
-	//lzma_decompress(buf, dest_size, buf_out, &dst_out);
-	IMAGE_EXPORT_DIRECTORY* pIMAGE_EXPORT_DIRECTORY = (IMAGE_EXPORT_DIRECTORY*)(dflie.VirtualIMG + dflie.NtHeader.OptionalHeader.DataDirectory[0].VirtualAddress);
-	DWORD* function_base = (DWORD*)(dflie.VirtualIMG + pIMAGE_EXPORT_DIRECTORY->AddressOfFunctions);
-	ULONGLONG decode_size = 2722;
-	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
-	ULONGLONG old_size = size;
+	size_t decode_size = 2722;
+	size_t old_size = size;
 	size = code_size + decode_size + dest_size;
-	alignment = (alignment + size) % SectionAlignment;
+	alignment = (alignment + size) % NtHeader.OptionalHeader.SectionAlignment;
 	usize += size;
 	char* buf = new char[size];
 	memset(buf, 0, size);
 	memcpy(buf, code_base, code_size);
-	ULONGLONG* p = (ULONGLONG*)(buf + 0x9);
+	size_t* p = (size_t*)(buf + 0x9);
 	*p = dest_size;
-	p = (ULONGLONG*)(buf + 0x13);
+	p = (size_t*)(buf + 0x13);
 	*p = old_size;
-	memcpy(buf + code_size, dflie.VirtualIMG + function_base[0], decode_size);
+	DWORD* function_base = (DWORD*)GetProcAddress(hmod, "LzmaDecode");
+	memcpy(buf + code_size, function_base, decode_size);
 	memcpy(buf + code_size + decode_size, compress_buf, dest_size);
 	delete[] code;
 	delete[] compress_buf;
 	FreeLibrary(hmod);
 	return buf;
 }
-char* PE::DLLCode(ULONGLONG& size, ULONGLONG& usize, DWORD& alignment)
+char* PE::DLLCode(size_t& size, size_t& usize, DWORD& alignment)
 {
-	PE dflie("../x64/Release/PEDLL.dll");
-	ULONGLONG code_size{};
+	PE dflie("PEDLL.dll");
+	size_t code_size{};
 	void* insert_base = insert_dll(code_size);
 	alignment = code_size % NtHeader.OptionalHeader.SectionAlignment;
 	usize = size = dflie.NtHeader.OptionalHeader.SizeOfImage + code_size;
@@ -83,31 +79,31 @@ char* PE::DLLCode(ULONGLONG& size, ULONGLONG& usize, DWORD& alignment)
 	memcpy(buf_base + dflie.DosHeader.e_lfanew, (char*)(&dflie.NtHeader), sizeof(IMAGE_NT_HEADERS));
 	return buf;
 }
-char* PE::CopyCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment)
+char* PE::CopyCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
 {
-	ULONGLONG code_size{};
+	size_t code_size{};
 	void* copy_base = copy_code(code_size);
 	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
-	ULONGLONG old_size = size;
+	size_t old_size = size;
 	size += code_size;
 	alignment = (alignment + size) % SectionAlignment;
 	usize += size;
 	char* buf = new char[size];
 	memcpy(buf, copy_base, code_size);
-	ULONGLONG* p = (ULONGLONG*)(buf + 0x9);
+	size_t* p = (size_t*)(buf + 0x9);
 	*p = old_size;
 	memcpy(buf + code_size, code, old_size);
 	delete[] code;
 	return buf;
 }
-void PE::InsertCode(char* code, ULONGLONG& size, ULONGLONG& usize, DWORD& alignment)
+void PE::InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
 {
-	ULONGLONG code_size{};
+	size_t code_size{};
 	void* enter_base = enter_code(code_size);
 	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
 	DWORD vaml = SectionAlignment - 1;
 	DWORD code_vaml = SectionAlignment - (code_size + alignment) % SectionAlignment;
-	ULONGLONG buf_size = code_vaml + code_size + size + NtHeader.OptionalHeader.SizeOfImage;
+	size_t buf_size = code_vaml + code_size + size + NtHeader.OptionalHeader.SizeOfImage;
 	buf_size = (buf_size + vaml) & ~vaml;
 	char* buf = new char[buf_size];
 	memset(buf, 0, buf_size);

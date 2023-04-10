@@ -34,5 +34,8 @@
     <MASM Include="x64.asm">
       <Filter>源文件</Filter>
     </MASM>
+    <MASM Include="x86.asm">
+      <Filter>源文件</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

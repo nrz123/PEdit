@@ -13,23 +13,23 @@ push rsi
 push rdi
 mov rbp, rsp
 mov r8,1234567812345678h
-mov rcx,1234567812345678h
+mov rax,1234567812345678h
 lea rdx,[fun_end + 2722]
 lea rdi,[rdx + r8]
 sub rsp,15992
 push rsp
 push 2
 push 3
+mov rcx, rsp
 push 0
+mov r9, rsp
 push 0
 push rsp
-push rcx
+push rax
 push rdi
-lea r9,qword ptr [rsp + 20h]
 push r9
 push r8
 push rdx
-lea rcx,qword ptr [rsp + 40h]
 push rcx
 call fun_end
 mov rsp, rbp
