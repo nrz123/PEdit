@@ -156,11 +156,10 @@
   <ItemGroup>
     <ClInclude Include="compress.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="miniacc.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="compress_lzma.cpp" />
+    <ClCompile Include="compress.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

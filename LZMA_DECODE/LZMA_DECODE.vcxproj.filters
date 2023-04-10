@@ -24,9 +24,6 @@
     <ClInclude Include="compress.h">
       <Filter>源文件</Filter>
     </ClInclude>
-    <ClInclude Include="miniacc.h">
-      <Filter>源文件</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -35,7 +32,7 @@
     <ClCompile Include="pch.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="compress_lzma.cpp">
+    <ClCompile Include="compress.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
