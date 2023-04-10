@@ -2,46 +2,38 @@
 .code
 
 decode_code proc
-mov rax, decode_code_start
-mov rdx, decode_code_end
-sub rdx, rax
-mov qword ptr [rcx], rdx
+lea rax, [fun_end - fun_start]
+mov qword ptr [rcx], rax
+mov rax,fun_start
 ret
-decode_code_start:
-call code_enter
-code_enter: 
-pop	rax
-sub	rax,5h
+fun_start:
 push rbp
 push rbx
 push rsi
 push rdi
 mov rbp, rsp
-mov rdx,1234567812345678h
-mov rdi,1234567812345678h
 mov r8,1234567812345678h
-mov rsi,1234567812345678h
-add rdx,rax
-add rdi,rax
-sub rsp,12
-sub rsp,15980
+mov rcx,1234567812345678h
+lea rdx,[fun_end + 2722]
+lea rdi,[rdx + r8]
+sub rsp,15992
 push rsp
-sub rsp,16
-mov dword ptr [rsp+8],2
-mov dword ptr [rsp],3
-sub rsp,10h
+push 2
+push 3
+push 0
+push 0
 push rsp
-push rsi
+push rcx
 push rdi
-lea r9,qword ptr [rsp+20h]
+lea r9,qword ptr [rsp + 20h]
 push r9
 push r8
 push rdx
-lea rcx,qword ptr [rsp+40h]
+lea rcx,qword ptr [rsp + 40h]
 push rcx
-call decode_code_end
+call fun_end
 mov rsp, rbp
-sub rsp, 8
+push rax
 call rdi
 mov rsp, rbp
 pop rdi
@@ -49,30 +41,23 @@ pop rsi
 pop rbx
 pop rbp
 ret
-decode_code_end:
+fun_end:
 decode_code endp
 
 copy_code proc
-mov rax, copy_code_start
-mov rdx, copy_code_end
-sub rdx, rax
-mov qword ptr [rcx], rdx
+lea rax, [fun_end - fun_start]
+mov qword ptr [rcx], rax
+mov rax,fun_start
 ret
-copy_code_start:
-call code_enter
-code_enter: 
-pop	rax
-sub	rax,5h
+fun_start:
 push rbp
 push rbx
 push rsi
 push rdi
 mov rbp, rsp
-mov rsi,1234567812345678h
-mov rdi,1234567812345678h
 mov rcx,1234567812345678h
-add rsi,rax
-add rdi,rax
+lea rsi,[fun_end]
+lea rdi,[rsi + rcx]
 mov rdx,rdi
 copy_loop:
 lodsb
@@ -86,53 +71,38 @@ pop rsi
 pop rbx
 pop rbp
 ret
-copy_code_end:
+fun_end:
 copy_code endp
 
 enter_code proc
-mov rax, enter_code_start
-mov rdx, enter_code_end
-sub rdx, rax
-mov qword ptr [rcx], rdx
+lea rax, [fun_end - fun_start]
+mov qword ptr [rcx], rax
+mov rax,fun_start
 ret
-enter_code_start:
-call code_enter
-code_enter: 
-pop	rax
-sub	rax,5h
+fun_start:
 mov edi, 12345678h   ;入口
-mov rsi, 1234567812345678h   ;插入代码入口
-add rax, rsi
 push rax
-call rax
+call fun_end
 pop rax
 mov rax, gs:[60h]
 add rdi, [rax + 10h]
 jmp rdi
-enter_code_end:
+fun_end:
 enter_code endp
 
 insert_dll proc
-mov rax, insert_dll_start
-mov rdx, insert_dll_end
-sub rdx, rax
-mov qword ptr [rcx], rdx
+lea rax, [fun_end - fun_start]
+mov qword ptr [rcx], rax
+mov rax,fun_start
 ret
-insert_dll_start:
-call code_enter
-code_enter: 
-pop	rax
-sub	rax,5h
+fun_start:
 push rbp
 push rbx
 push rsi
 push rdi
 mov rbp, rsp
-mov rsi, 1234567812345678h   ;dll基址
-add rax, rsi
-mov rsi, rax
 jmp main_start
-function_out:
+fun_out:
 mov rsp, rbp
 pop rdi
 pop rsi
@@ -160,7 +130,7 @@ next_loop:
 cmp edi, dword ptr [rcx + 18h]
 jnz next_loop_continue
 xor rax, rax
-jmp function_out
+jmp fun_out
 next_loop_continue:
 mov edx, dword ptr [rcx + 20h]
 add rdx, rbx
@@ -190,7 +160,7 @@ mov edx, dword ptr [rcx + 1ch]
 add rdx, rbx
 mov eax, dword ptr [rdx + 4 * rdi]
 add rax, rbx
-jmp function_out
+jmp fun_out
 repair_import:
 push rbp
 push rbx
@@ -201,19 +171,19 @@ mov rbx, rcx
 mov rcx, 2b3def2c9071f059h ;hash of GetProcAddress
 call find_function
 test rax, rax
-jz function_out
+jz fun_out
 push rax
 mov rcx, 0b22b0f2c5a666505h ;hash of LoadLibraryA
 call find_function
 test rax, rax
-jz function_out
+jz fun_out
 push rax
 sub rsp, 20h
 mov esi, dword ptr [rbx + 3ch] 
 mov esi, dword ptr [rbx + rsi + 90h]
 import_loop:
 cmp dword ptr [rbx + rsi],0
-jz function_out
+jz fun_out
 mov ecx, dword ptr [rbx + rsi + 0ch]
 add rcx, rbx
 mov rax, qword ptr [rbp - 10h]
@@ -271,7 +241,7 @@ add rsi, rbx
 add rdx, rsi
 reloc_loop:
 cmp rsi,rdx
-jz function_out
+jz fun_out
 mov rdi, 8h
 reloc_item_loop:
 cmp edi, dword ptr [rsi + 4h]
@@ -290,9 +260,10 @@ add rsi, rdi
 jmp reloc_loop
 main_start:
 sub rsp, 28h
-mov rcx, rsi
+lea rsi,[fun_end]
+mov rcx,rsi
 call repair_import
-mov rcx, rsi
+mov rcx,rsi
 call repair_reloc
 mov eax, dword ptr [rsi + 3ch]
 mov eax, dword ptr [rsi + rax + 28h]
@@ -305,8 +276,8 @@ push r8
 push rdx
 push rcx
 call rax
-jmp function_out
-insert_dll_end:
+jmp fun_out
+fun_end:
 insert_dll endp
 
 end

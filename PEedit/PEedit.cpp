@@ -22,7 +22,13 @@ int main()
 	char* code = p.DLLCode(size, usize, alignment);
 	code = p.CopyCode(code, size, usize, alignment);
 	code = p.CompressCode(code, size, usize, alignment);
-	/*unsigned char* buf = new unsigned char[size];
+	code = p.CopyCode(code, size, usize, alignment);
+	code = p.CompressCode(code, size, usize, alignment);
+	code = p.CopyCode(code, size, usize, alignment);
+	code = p.CompressCode(code, size, usize, alignment);
+	code = p.CopyCode(code, size, usize, alignment);
+	code = p.CompressCode(code, size, usize, alignment);
+	/*unsigned char* buf = new unsigned char[size]; 
 	unsigned char* buf_out = new unsigned char[size];
 	ULONGLONG dest_size = size, dst_out = size, outPropsSize = 5;
 
