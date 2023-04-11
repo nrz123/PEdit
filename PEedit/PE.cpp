@@ -1,5 +1,5 @@
 #include "PE.h"
-#include "x64.h"
+#include "ASM.h"
 #pragma warning(disable:4996)
 PE::PE(const char* fileName)
 {
