@@ -16,18 +16,16 @@ size_t GetHash(const char* fun_name)
 int main()
 {
 #if 1
-	PE p("1.exe");
+	PE p("Test.exe");
 	size_t size{}, usize{};
 	DWORD alignment{};
 	char* code = p.DLLCode(size, usize, alignment);
-	code = p.CompressCode(code, size, usize, alignment);
+	//code = p.CompressCode(code, size, usize, alignment);
 	p.InsertCode(code, size, usize, alignment);
-	p.exportToFile("2.exe");
+	p.exportToFile("Test1.exe");
 #else
-	//size_t hash = GetHash("LoadLibraryA");
-	//printf("result of hash is %.16llx\n", hash);
-	HMODULE hmod = LoadLibrary("../x64/Release/PEDLL.dll");
+	size_t hash = GetHash("GetProcAddress");
+	printf("result of hash is %.8x\n", hash);
 	getchar();
-	FreeLibrary(hmod);
 #endif
 }

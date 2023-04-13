@@ -214,8 +214,8 @@ add rdx, 2
 mov rax, qword ptr [rbp - 8h]
 mov qword ptr [rbp - 18h], rcx
 push 0
-push rcx
 push rdx
+push rcx
 call rax
 add rsp,18h
 mov rcx, qword ptr [rbp - 18h]
