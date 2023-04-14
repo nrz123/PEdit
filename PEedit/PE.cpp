@@ -43,7 +43,11 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment
 	lzma_compress((unsigned char*)code, size, compress_buf, &dest_size);
 	size_t code_size{};
 	void* code_base = decode_code(code_size);
+#ifdef _M_IX86
+	size_t decode_size = 2732;
+#else
 	size_t decode_size = 2722;
+#endif
 	size_t old_size = size;
 	size = code_size + decode_size + dest_size;
 	alignment = (alignment + size) % NtHeader.OptionalHeader.SectionAlignment;
@@ -51,10 +55,17 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment
 	char* buf = new char[size];
 	memset(buf, 0, size);
 	memcpy(buf, code_base, code_size);
+#ifdef _M_IX86
+	size_t* p = (size_t*)(buf + 0x7);
+	*p = dest_size;
+	p = (size_t*)(buf + 0xc);
+	*p = old_size;
+#else
 	size_t* p = (size_t*)(buf + 0x9);
 	*p = dest_size;
 	p = (size_t*)(buf + 0x13);
 	*p = old_size;
+#endif
 	DWORD* function_base = (DWORD*)GetProcAddress(hmod, "LzmaDecode");
 	memcpy(buf + code_size, function_base, decode_size);
 	memcpy(buf + code_size + decode_size, compress_buf, dest_size);
@@ -77,23 +88,6 @@ char* PE::DLLCode(size_t& size, size_t& usize, DWORD& alignment)
 	memcpy(buf_base, dflie.VirtualIMG, dflie.NtHeader.OptionalHeader.SizeOfImage);
 	memcpy(buf_base, (char*)(&dflie.DosHeader), sizeof(IMAGE_DOS_HEADER));
 	memcpy(buf_base + dflie.DosHeader.e_lfanew, (char*)(&dflie.NtHeader), sizeof(IMAGE_NT_HEADERS));
-	return buf;
-}
-char* PE::CopyCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
-{
-	size_t code_size{};
-	void* copy_base = copy_code(code_size);
-	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
-	size_t old_size = size;
-	size += code_size;
-	alignment = (alignment + size) % SectionAlignment;
-	usize += size;
-	char* buf = new char[size];
-	memcpy(buf, copy_base, code_size);
-	size_t* p = (size_t*)(buf + 0x9);
-	*p = old_size;
-	memcpy(buf + code_size, code, old_size);
-	delete[] code;
 	return buf;
 }
 void PE::InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment)

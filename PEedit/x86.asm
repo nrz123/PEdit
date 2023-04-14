@@ -3,6 +3,7 @@
 .data
 .code
 assume fs:nothing
+
 decode_code proc
 lea eax, [fun_end - fun_start]
 mov ecx,dword ptr [esp + 4]
@@ -10,20 +11,46 @@ mov dword ptr [ecx], eax
 mov eax,fun_start
 ret
 fun_start:
+push ebp
+push ebx
+push esi
+push edi
+mov ebp, esp
+mov esi,12345678h
+mov eax,12345678h
+call $ + 5
+pop edx
+add edx, 60
+lea edi,[edx + 2732 + esi]
+sub esp,15992
+push esp
+push 2
+push 0
+push 3
+mov ecx, esp
+push 0
+mov ebx, esp
+push 0
+push esp
+push eax
+push edi
+push ebx
+push esi
+push edx
+add dword ptr [esp], 2732
+push ecx
+call edx
+mov esp, ebp
+push eax
+call edi
+mov esp, ebp
+pop edi
+pop esi
+pop ebx
+pop ebp
 ret
 fun_end:
 decode_code endp
-
-copy_code proc
-lea eax, [fun_end - fun_start]
-mov ecx,dword ptr [esp + 4]
-mov dword ptr [ecx], eax
-mov eax,fun_start
-ret
-fun_start:
-ret
-fun_end:
-copy_code endp
 
 enter_code proc
 lea eax, [fun_end - fun_start]

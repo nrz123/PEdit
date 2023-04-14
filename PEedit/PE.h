@@ -17,7 +17,6 @@ public:
 	PE(const char* fileName);
 	~PE();
 	void InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
-	char* CopyCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
 	char* DLLCode(size_t& size, size_t& usize, DWORD& alignment);
 	char* CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
 	void exportToFile(const char* fileName);

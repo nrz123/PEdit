@@ -44,36 +44,6 @@ ret
 fun_end:
 decode_code endp
 
-copy_code proc
-lea rax, [fun_end - fun_start]
-mov qword ptr [rcx], rax
-mov rax,fun_start
-ret
-fun_start:
-push rbp
-push rbx
-push rsi
-push rdi
-mov rbp, rsp
-mov rcx,1234567812345678h
-lea rsi,[fun_end]
-lea rdi,[rsi + rcx]
-mov rdx,rdi
-copy_loop:
-lodsb
-stosb
-loop copy_loop
-push rdx
-call rdx
-mov rsp, rbp
-pop rdi
-pop rsi
-pop rbx
-pop rbp
-ret
-fun_end:
-copy_code endp
-
 enter_code proc
 lea rax, [fun_end - fun_start]
 mov qword ptr [rcx], rax
