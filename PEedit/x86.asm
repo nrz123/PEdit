@@ -1,5 +1,5 @@
 .386
-.model flat, c			;定义模式
+.model flat, c
 .data
 .code
 assume fs:nothing
@@ -61,9 +61,11 @@ ret
 fun_start:
 mov edi, 12345678h   ;入口
 call fun_end
-mov eax, fs:[30h]
-add edi, [eax + 08h]
-jmp edi
+call $ + 5
+pop eax
+sub eax, 0fh
+sub eax, edi
+call eax
 fun_end:
 enter_code endp
 

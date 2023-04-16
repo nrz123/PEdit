@@ -53,10 +53,10 @@ fun_start:
 mov edi, 12345678h   ;Èë¿Ú
 push rax
 call fun_end
+lea rax, [fun_start]
+sub rax, rdi
+call rax
 pop rax
-mov rax, gs:[60h]
-add rdi, [rax + 10h]
-jmp rdi
 fun_end:
 enter_code endp
 

@@ -31,6 +31,49 @@ PE::~PE()
 	if (in != nullptr)
 		fclose(in);
 }
+void PE::pack()
+{
+	size_t size{}, usize{};
+	DWORD alignment{};
+	char* code = ShellCode(size, usize, alignment);
+	code = CompressCode(code, size, usize, alignment);
+	DWORD SizeOfImage = DosHeader.e_lfanew;
+	SizeOfImage += sizeof(IMAGE_NT_HEADERS);
+	SizeOfImage += sizeof(IMAGE_SECTION_HEADER);
+	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
+	DWORD vaml = SectionAlignment - 1;
+	DWORD faml = NtHeader.OptionalHeader.FileAlignment - 1;
+	DWORD FSectionStart = (SizeOfImage + faml) & ~faml;
+	SizeOfImage = (SizeOfImage + vaml) & ~vaml;
+	DWORD SectionStart = SizeOfImage;
+	DWORD EntryPoint = SectionStart + (SectionAlignment - alignment) % SectionAlignment;
+	DWORD vAlignment = (alignment + vaml) & ~vaml;
+	DWORD VirtualSize = ((usize + vaml) & ~vaml) + vAlignment;
+	SizeOfImage += VirtualSize;
+	delete[] VirtualIMG;
+	VirtualIMG = new char[SizeOfImage];
+	memset(VirtualIMG, 0, SizeOfImage);
+	SectionHeaders = (IMAGE_SECTION_HEADER*)(VirtualIMG + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS));
+	strcpy((char*)SectionHeaders[0].Name, "run");
+	SectionHeaders[0].Misc.VirtualSize = VirtualSize;
+	SectionHeaders[0].VirtualAddress = SectionStart;
+	SectionHeaders[0].SizeOfRawData = ((size + faml) & ~faml) + vAlignment;
+	SectionHeaders[0].PointerToRawData = FSectionStart;
+	SectionHeaders[0].PointerToRelocations = 0;
+	SectionHeaders[0].PointerToLinenumbers = 0;
+	SectionHeaders[0].NumberOfRelocations = 0;
+	SectionHeaders[0].NumberOfLinenumbers = 0;
+	SectionHeaders[0].Characteristics = 0xE0000080;
+	memcpy(VirtualIMG + EntryPoint, code, size);
+	NtHeader.FileHeader.NumberOfSections = 1;
+	NtHeader.OptionalHeader.SizeOfImage = SizeOfImage;
+	NtHeader.OptionalHeader.AddressOfEntryPoint = EntryPoint;
+	for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++)
+	{
+		NtHeader.OptionalHeader.DataDirectory[i].Size = 0;
+		NtHeader.OptionalHeader.DataDirectory[i].VirtualAddress = 0;
+	}
+}
 char* PE::CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
 {
 	HMODULE hmod = LoadLibrary("LZMA_DECODE.dll");
@@ -77,17 +120,21 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment
 char* PE::DLLCode(size_t& size, size_t& usize, DWORD& alignment)
 {
 	PE dflie("PEDLL.dll");
+	return dflie.ShellCode(size, usize, alignment);
+}
+char* PE::ShellCode(size_t& size, size_t& usize, DWORD& alignment)
+{
 	size_t code_size{};
 	void* insert_base = insert_dll(code_size);
 	alignment = code_size % NtHeader.OptionalHeader.SectionAlignment;
-	usize = size = dflie.NtHeader.OptionalHeader.SizeOfImage + code_size;
+	usize = size = NtHeader.OptionalHeader.SizeOfImage + code_size;
 	char* buf = new char[size];
 	memset(buf, 0, size);
 	memcpy(buf, insert_base, code_size);
 	char* buf_base = buf + code_size;
-	memcpy(buf_base, dflie.VirtualIMG, dflie.NtHeader.OptionalHeader.SizeOfImage);
-	memcpy(buf_base, (char*)(&dflie.DosHeader), sizeof(IMAGE_DOS_HEADER));
-	memcpy(buf_base + dflie.DosHeader.e_lfanew, (char*)(&dflie.NtHeader), sizeof(IMAGE_NT_HEADERS));
+	memcpy(buf_base, VirtualIMG, NtHeader.OptionalHeader.SizeOfImage);
+	memcpy(buf_base, (char*)(&DosHeader), sizeof(IMAGE_DOS_HEADER));
+	memcpy(buf_base + DosHeader.e_lfanew, (char*)(&NtHeader), sizeof(IMAGE_NT_HEADERS));
 	return buf;
 }
 void PE::InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
@@ -96,8 +143,8 @@ void PE::InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
 	void* enter_base = enter_code(code_size);
 	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
 	DWORD vaml = SectionAlignment - 1;
-	DWORD code_vaml = SectionAlignment - (code_size + alignment) % SectionAlignment;
-	size_t buf_size = code_vaml + code_size + size + NtHeader.OptionalHeader.SizeOfImage;
+	DWORD code_vaml = (SectionAlignment - (code_size + alignment) % SectionAlignment) % SectionAlignment;
+	size_t buf_size = code_vaml + code_size + usize + NtHeader.OptionalHeader.SizeOfImage;
 	buf_size = (buf_size + vaml) & ~vaml;
 	char* buf = new char[buf_size];
 	memset(buf, 0, buf_size);
@@ -106,7 +153,7 @@ void PE::InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
 	char* buf_enter = buf + NtHeader.OptionalHeader.SizeOfImage + code_vaml;
 	memcpy(buf_enter, enter_base, code_size);
 	DWORD* pEnter = (DWORD*)(buf_enter + 0x1);
-	*pEnter = NtHeader.OptionalHeader.AddressOfEntryPoint;
+	*pEnter = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
 	memcpy(buf_enter + code_size, code, size);
 	delete[] code;
 	IMAGE_SECTION_HEADER& sheader = SectionHeaders[NtHeader.FileHeader.NumberOfSections - 1];

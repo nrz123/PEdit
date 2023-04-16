@@ -16,8 +16,10 @@ private:
 public:
 	PE(const char* fileName);
 	~PE();
+	void pack();
 	void InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
 	char* DLLCode(size_t& size, size_t& usize, DWORD& alignment);
+	char* ShellCode(size_t& size, size_t& usize, DWORD& alignment);
 	char* CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
 	void exportToFile(const char* fileName);
 };

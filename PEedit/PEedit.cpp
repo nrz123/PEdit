@@ -20,9 +20,8 @@ int main()
 	size_t size{}, usize{};
 	DWORD alignment{};
 	char* code = p.DLLCode(size, usize, alignment);
-	code = p.CompressCode(code, size, usize, alignment);
-	code = p.CompressCode(code, size, usize, alignment);
 	p.InsertCode(code, size, usize, alignment);
+	p.pack();
 	p.exportToFile("Test1.exe");
 #else
 	size_t hash = GetHash("GetProcAddress");
