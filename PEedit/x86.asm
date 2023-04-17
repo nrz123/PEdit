@@ -16,13 +16,38 @@ push ebx
 push esi
 push edi
 mov ebp, esp
+jmp main_start
+chkstk:
+push ecx
+lea ecx, [esp + 4]
+sub ecx, eax
+sbb eax, eax
+not eax
+and ecx, eax
+mov eax, esp
+and eax, not 0fffh
+cs10:
+cmp ecx, eax
+jb  short cs20
+mov eax, ecx
+pop ecx
+xchg esp, eax
+mov eax, dword ptr [eax]
+mov dword ptr [esp], eax
+ret
+cs20:
+sub eax, 1000h
+test dword ptr [eax],eax
+jmp short cs10
+main_start:
+mov eax,15992
+call chkstk
 mov esi,12345678h
 mov eax,12345678h
 call $ + 5
 pop edx
-add edx, 60
+add edx, 54
 lea edi,[edx + 2732 + esi]
-sub esp,15992
 push esp
 push 2
 push 0

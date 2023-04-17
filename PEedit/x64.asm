@@ -12,11 +12,36 @@ push rbx
 push rsi
 push rdi
 mov rbp, rsp
-mov r8,1234567812345678h
-mov rax,1234567812345678h
-lea rdx,[fun_end + 2722]
-lea rdi,[rdx + r8]
-sub rsp,15992
+jmp main_start
+chkstk:
+sub rsp,10h
+mov qword ptr [rsp],r10
+mov qword ptr [rsp + 8],r11
+xor r11,r11
+lea r10,[rsp + 18h]
+sub r10,rax
+cmovb       r10,r11
+mov r11,qword ptr gs:[10h]
+cmp r10,r11
+jae cs10+10h
+and r10w,0F000h
+cs10:
+lea r11,[r11 - 1000h]
+mov byte ptr [r11],0
+cmp r10,r11
+jne cs10
+mov r10,qword ptr [rsp]
+mov r11,qword ptr [rsp+8]
+add rsp,10h
+ret
+main_start:
+mov eax,15992
+call chkstk
+sub rsp, rax
+mov r8, 1234567812345678h
+mov rax, 1234567812345678h
+lea rdx, [fun_end + 2722]
+lea rdi, [rdx + r8]
 push rsp
 push 2
 push 3

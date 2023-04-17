@@ -48,7 +48,7 @@ void PE::pack()
 	DWORD SectionStart = SizeOfImage;
 	DWORD EntryPoint = SectionStart + (SectionAlignment - alignment) % SectionAlignment;
 	DWORD vAlignment = (alignment + vaml) & ~vaml;
-	DWORD VirtualSize = ((usize + vaml) & ~vaml) + vAlignment;
+	DWORD VirtualSize = ((usize - alignment + vaml) & ~vaml) + vAlignment;
 	SizeOfImage += VirtualSize;
 	delete[] VirtualIMG;
 	VirtualIMG = new char[SizeOfImage];
@@ -57,7 +57,7 @@ void PE::pack()
 	strcpy((char*)SectionHeaders[0].Name, "run");
 	SectionHeaders[0].Misc.VirtualSize = VirtualSize;
 	SectionHeaders[0].VirtualAddress = SectionStart;
-	SectionHeaders[0].SizeOfRawData = ((size + faml) & ~faml) + vAlignment;
+	SectionHeaders[0].SizeOfRawData = ((size - alignment + faml) & ~faml) + vAlignment;
 	SectionHeaders[0].PointerToRawData = FSectionStart;
 	SectionHeaders[0].PointerToRelocations = 0;
 	SectionHeaders[0].PointerToLinenumbers = 0;
@@ -99,14 +99,14 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment
 	memset(buf, 0, size);
 	memcpy(buf, code_base, code_size);
 #ifdef _M_IX86
-	size_t* p = (size_t*)(buf + 0x7);
+	size_t* p = (size_t*)(buf + 62);
 	*p = dest_size;
-	p = (size_t*)(buf + 0xc);
+	p = (size_t*)(buf + 67);
 	*p = old_size;
 #else
-	size_t* p = (size_t*)(buf + 0x9);
+	size_t* p = (size_t*)(buf + 102);
 	*p = dest_size;
-	p = (size_t*)(buf + 0x13);
+	p = (size_t*)(buf + 112);
 	*p = old_size;
 #endif
 	DWORD* function_base = (DWORD*)GetProcAddress(hmod, "LzmaDecode");
