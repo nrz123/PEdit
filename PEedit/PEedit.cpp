@@ -19,8 +19,8 @@ int main()
 	PE p("Test.exe");
 	size_t size{}, usize{};
 	DWORD alignment{};
-	char* code = p.DLLCode(size, usize, alignment);
-	p.InsertCode(code, size, usize, alignment);
+	//char* code = p.DLLCode(size, usize, alignment);
+	//p.InsertCode(code, size, usize, alignment);
 	p.pack();
 	p.exportToFile("Test1.exe");
 #else

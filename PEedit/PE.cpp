@@ -39,33 +39,50 @@ void PE::pack()
 	code = CompressCode(code, size, usize, alignment);
 	DWORD SizeOfImage = DosHeader.e_lfanew;
 	SizeOfImage += sizeof(IMAGE_NT_HEADERS);
-	SizeOfImage += sizeof(IMAGE_SECTION_HEADER);
+	SizeOfImage += 2 * sizeof(IMAGE_SECTION_HEADER);
 	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
 	DWORD vaml = SectionAlignment - 1;
 	DWORD faml = NtHeader.OptionalHeader.FileAlignment - 1;
-	DWORD FSectionStart = (SizeOfImage + faml) & ~faml;
+	DWORD rFSectionStart = (SizeOfImage + faml) & ~faml;
 	SizeOfImage = (SizeOfImage + vaml) & ~vaml;
+	DWORD rSectionStart = SizeOfImage;
+	DWORD rsize = NtHeader.OptionalHeader.DataDirectory[2].Size;
+	DWORD rbase = NtHeader.OptionalHeader.DataDirectory[2].VirtualAddress;
+	DWORD rVirtualSize = (rsize + vaml) & ~vaml;
+	DWORD rSizeOfRawData = (rsize + faml) & ~faml;
+	DWORD FSectionStart = rFSectionStart + rSizeOfRawData;
+	SizeOfImage += rVirtualSize;
 	DWORD SectionStart = SizeOfImage;
 	DWORD code_vaml = (SectionAlignment - alignment) % SectionAlignment;
 	DWORD VirtualSize = (code_vaml + usize + vaml) & ~vaml;
 	DWORD SizeOfRawData = (code_vaml + size + faml) & ~faml;
 	SizeOfImage += VirtualSize;
-	delete[] VirtualIMG;
-	VirtualIMG = new char[SectionStart + SizeOfRawData];
-	memset(VirtualIMG, 0, SectionStart + SizeOfRawData);
-	SectionHeaders = (IMAGE_SECTION_HEADER*)(VirtualIMG + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS));
-	strcpy((char*)SectionHeaders[0].Name, "run");
-	SectionHeaders[0].Misc.VirtualSize = VirtualSize;
-	SectionHeaders[0].VirtualAddress = SectionStart;
-	SectionHeaders[0].SizeOfRawData = SizeOfRawData;
-	SectionHeaders[0].PointerToRawData = FSectionStart;
+	char* buf = new char[SectionStart + SizeOfRawData];
+	memset(buf, 0, SectionStart + SizeOfRawData);
+	SectionHeaders = (IMAGE_SECTION_HEADER*)(buf + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS));
+	strcpy((char*)SectionHeaders[0].Name, ".src");
+	SectionHeaders[0].Misc.VirtualSize = rVirtualSize;
+	SectionHeaders[0].VirtualAddress = rSectionStart;
+	SectionHeaders[0].SizeOfRawData = rSizeOfRawData;
+	SectionHeaders[0].PointerToRawData = rFSectionStart;
 	SectionHeaders[0].PointerToRelocations = 0;
 	SectionHeaders[0].PointerToLinenumbers = 0;
 	SectionHeaders[0].NumberOfRelocations = 0;
 	SectionHeaders[0].NumberOfLinenumbers = 0;
 	SectionHeaders[0].Characteristics = 0xE0000080;
-	memcpy(VirtualIMG + SectionStart + code_vaml, code, size);
-	NtHeader.FileHeader.NumberOfSections = 1;
+	strcpy((char*)SectionHeaders[1].Name, "run");
+	SectionHeaders[1].Misc.VirtualSize = VirtualSize;
+	SectionHeaders[1].VirtualAddress = SectionStart;
+	SectionHeaders[1].SizeOfRawData = SizeOfRawData;
+	SectionHeaders[1].PointerToRawData = FSectionStart;
+	SectionHeaders[1].PointerToRelocations = 0;
+	SectionHeaders[1].PointerToLinenumbers = 0;
+	SectionHeaders[1].NumberOfRelocations = 0;
+	SectionHeaders[1].NumberOfLinenumbers = 0;
+	SectionHeaders[1].Characteristics = 0xE0000080;
+	memcpy(buf + rSectionStart, VirtualIMG + rbase, rsize);
+	memcpy(buf + SectionStart + code_vaml, code, size);
+	NtHeader.FileHeader.NumberOfSections = 2;
 	NtHeader.OptionalHeader.SizeOfImage = SizeOfImage;
 	NtHeader.OptionalHeader.AddressOfEntryPoint = SectionStart + code_vaml;
 	for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++)
@@ -73,6 +90,10 @@ void PE::pack()
 		NtHeader.OptionalHeader.DataDirectory[i].Size = 0;
 		NtHeader.OptionalHeader.DataDirectory[i].VirtualAddress = 0;
 	}
+	//NtHeader.OptionalHeader.DataDirectory[2].Size = rsize;
+	//NtHeader.OptionalHeader.DataDirectory[2].VirtualAddress = rSectionStart;
+	delete[] VirtualIMG;
+	VirtualIMG = buf;
 }
 char* PE::CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment)
 {
