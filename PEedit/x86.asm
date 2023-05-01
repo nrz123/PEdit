@@ -183,8 +183,10 @@ test eax, eax
 jz fun_out
 push eax
 sub esp, 20h
-mov esi, dword ptr [ebx + 3ch] 
-mov esi, dword ptr [ebx + esi + 80h]
+mov eax, dword ptr [ebx + 3ch] 
+mov esi, dword ptr [ebx + eax + 80h]
+sub ebx, dword ptr [ebx + eax + 50h]
+sub ebx, 1000h
 import_loop:
 cmp dword ptr [ebx + esi],0
 jz fun_out
@@ -199,15 +201,15 @@ fit_loop:
 mov edx, dword ptr [ebx + edi]
 test edx, edx
 jz fit_out
-mov eax,080000000h
-test edx, eax
+test edx, 080000000h
 jz fit_next
-mov edx, edx
+and edx, 07fffffffh
 mov eax, dword ptr [ecx + 3ch] 
 mov eax, dword ptr [ecx + eax + 78h]
+sub edx, dword ptr [ecx + eax + 10h]
 mov eax, dword ptr [ecx + eax + 1ch]
 add eax, ecx
-mov edx, dword ptr [eax + 4 * edx - 4]
+mov edx, dword ptr [eax + 4 * edx]
 add edx, ecx
 mov dword ptr [ebx + edi], edx
 jmp fit_continue
@@ -238,6 +240,8 @@ mov edx, dword ptr [ebx + 3ch]
 mov eax, dword ptr [ebx + edx + 34h]
 mov esi, dword ptr [ebx + edx + 0a0h]
 mov edx, dword ptr [ebx + edx + 0a4h]
+sub ebx, dword ptr [ebx + edx + 50h]
+sub ebx, 1000h
 add esi, ebx
 add edx, esi
 reloc_loop:
@@ -259,17 +263,79 @@ jmp reloc_item_loop
 reloc_item_loop_out:
 add esi, edi
 jmp reloc_loop
+
+repair_protect:
+push ebp
+push ebx
+push esi
+push edi
+mov ebp, esp
+mov ebx, ecx
+mov ecx, 0ef64a41eh
+call find_function
+test eax, eax
+jz fun_out
+mov edi, eax
+mov eax, dword ptr [ebx + 3ch]
+sub ebx, dword ptr [ebx + eax + 50h]
+sub ebx, 1000h
+push eax
+push esp
+push 4
+push 1000h
+push ebx
+call edi
+mov eax, dword ptr [ebx + 3ch]
+and byte ptr [ebx + eax + 11fh],7fh
+pop eax
+push eax
+push esp
+push eax
+push 1000h
+push ebx
+call edi
+
+
+;mov edi, eax
+;mov eax, dword ptr [ebx + 3ch]
+;movzx ecx, word ptr [ebx + eax + 6h]
+;lea esi, [ebx + eax + 0f8h]
+;sub ebx, dword ptr [ebx + eax + 50h]
+;sub ebx, 1000h
+;sloop:
+;push ecx
+;push eax
+;push esp
+;push dword ptr [esi + 24h]
+;mov edx, dword ptr [esi + 8h]
+;add edx, 0fffh
+;and edx, 0fffff000h
+;push edx
+;mov ecx, ebx
+;add ecx, dword ptr [esi + 0ch]
+;push ecx
+;call edi
+;pop ecx
+;pop ecx
+;add esi, 28h
+;loop sloop
+jmp fun_out
+
 main_start:
 sub esp, 28h
 call $ + 5
 pop esi
-add esi,02fh
+add esi,040h
 mov ecx,esi
 call repair_import
 mov ecx,esi
 call repair_reloc
-mov eax, dword ptr [esi + 3ch]
-mov eax, dword ptr [esi + eax + 28h]
+mov ecx,esi
+call repair_protect
+mov ecx, dword ptr [esi + 3ch]
+mov eax, dword ptr [esi + ecx + 28h]
+sub esi, dword ptr [esi + ecx + 50h]
+sub esi, 1000h
 add eax, esi
 mov ecx, esi
 mov edx, 1h

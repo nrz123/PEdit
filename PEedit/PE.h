@@ -6,7 +6,7 @@
 using namespace std;
 class PE
 {
-private:
+public:
 	IMAGE_DOS_HEADER DosHeader;
 	IMAGE_NT_HEADERS NtHeader;
 	IMAGE_SECTION_HEADER* SectionHeaders{};
@@ -17,10 +17,11 @@ public:
 	PE(const char* fileName);
 	~PE();
 	void pack();
-	void InsertCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
-	char* DLLCode(size_t& size, size_t& usize, DWORD& alignment);
-	char* ShellCode(size_t& size, size_t& usize, DWORD& alignment);
-	char* CompressCode(char* code, size_t& size, size_t& usize, DWORD& alignment);
+	void InsertCode(char* code, size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment);
+	char* DLLCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment);
+	char* ShellCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment);
+	char* CompressCode(char* code, size_t& size, size_t& offset, size_t& usize, size_t& enter, DWORD& alignment, DWORD type = 0);
+	void RepairSrc(char* pStart, DWORD offset, int baseOffset, DWORD deth);
 	void exportToFile(const char* fileName);
 };
 
