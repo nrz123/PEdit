@@ -46,8 +46,12 @@ mov esi,12345678h
 mov eax,12345678h
 call $ + 5
 pop edx
-add edx, 54
+add edx, 70
 lea edi,[edx + 2732 + esi]
+jmp decode
+lea edi,[edx - 92h]
+sub edi, eax
+decode:
 push esp
 push 2
 push 0
@@ -67,6 +71,7 @@ push ecx
 call edx
 mov esp, ebp
 push eax
+add edi, 12345678h
 call edi
 mov esp, ebp
 pop edi
@@ -185,8 +190,9 @@ push eax
 sub esp, 20h
 mov eax, dword ptr [ebx + 3ch] 
 mov esi, dword ptr [ebx + eax + 80h]
-sub ebx, dword ptr [ebx + eax + 50h]
-sub ebx, 1000h
+mov ecx, dword ptr [ebx + eax + 50h]
+sub ebx, dword ptr [ebx + eax + 38h]
+sub ebx, ecx
 import_loop:
 cmp dword ptr [ebx + esi],0
 jz fun_out
@@ -204,18 +210,11 @@ jz fit_out
 test edx, 080000000h
 jz fit_next
 and edx, 07fffffffh
-mov eax, dword ptr [ecx + 3ch] 
-mov eax, dword ptr [ecx + eax + 78h]
-sub edx, dword ptr [ecx + eax + 10h]
-mov eax, dword ptr [ecx + eax + 1ch]
-add eax, ecx
-mov edx, dword ptr [eax + 4 * edx]
-add edx, ecx
-mov dword ptr [ebx + edi], edx
-jmp fit_continue
+jmp fit_next_out
 fit_next:
 add edx, ebx
 add edx, 2
+fit_next_out:
 mov eax, dword ptr [ebp - 4h]
 mov dword ptr [ebp - 0ch], ecx
 push edx
@@ -240,8 +239,9 @@ mov edx, dword ptr [ebx + 3ch]
 mov eax, dword ptr [ebx + edx + 34h]
 mov esi, dword ptr [ebx + edx + 0a0h]
 mov edx, dword ptr [ebx + edx + 0a4h]
-sub ebx, dword ptr [ebx + edx + 50h]
-sub ebx, 1000h
+mov ecx, dword ptr [ebx + edx + 50h]
+sub ebx, dword ptr [ebx + edx + 38h]
+sub ebx, ecx
 add esi, ebx
 add edx, esi
 reloc_loop:
@@ -263,7 +263,6 @@ jmp reloc_item_loop
 reloc_item_loop_out:
 add esi, edi
 jmp reloc_loop
-
 repair_protect:
 push ebp
 push ebx
@@ -277,50 +276,25 @@ test eax, eax
 jz fun_out
 mov edi, eax
 mov eax, dword ptr [ebx + 3ch]
-sub ebx, dword ptr [ebx + eax + 50h]
-sub ebx, 1000h
+mov ecx, dword ptr [ebx + eax + 50h]
+sub ebx, dword ptr [ebx + eax + 38h]
+sub ebx, ecx
+mov esi, dword ptr [ebx + 3ch]
 push eax
 push esp
 push 4
-push 1000h
+push dword ptr [ebx + esi + 104h]
 push ebx
 call edi
-mov eax, dword ptr [ebx + 3ch]
-and byte ptr [ebx + eax + 11fh],7fh
+and byte ptr [ebx + esi + 11fh], 7fh
 pop eax
 push eax
 push esp
 push eax
-push 1000h
+push dword ptr [ebx + esi + 104h]
 push ebx
 call edi
-
-
-;mov edi, eax
-;mov eax, dword ptr [ebx + 3ch]
-;movzx ecx, word ptr [ebx + eax + 6h]
-;lea esi, [ebx + eax + 0f8h]
-;sub ebx, dword ptr [ebx + eax + 50h]
-;sub ebx, 1000h
-;sloop:
-;push ecx
-;push eax
-;push esp
-;push dword ptr [esi + 24h]
-;mov edx, dword ptr [esi + 8h]
-;add edx, 0fffh
-;and edx, 0fffff000h
-;push edx
-;mov ecx, ebx
-;add ecx, dword ptr [esi + 0ch]
-;push ecx
-;call edi
-;pop ecx
-;pop ecx
-;add esi, 28h
-;loop sloop
 jmp fun_out
-
 main_start:
 sub esp, 28h
 call $ + 5
@@ -334,8 +308,9 @@ mov ecx,esi
 call repair_protect
 mov ecx, dword ptr [esi + 3ch]
 mov eax, dword ptr [esi + ecx + 28h]
-sub esi, dword ptr [esi + ecx + 50h]
-sub esi, 1000h
+mov edx, dword ptr [esi + ecx + 50h]
+sub esi, dword ptr [esi + ecx + 38h]
+sub esi, edx
 add eax, esi
 mov ecx, esi
 mov edx, 1h

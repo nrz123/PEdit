@@ -53,8 +53,8 @@ void PE::pack()
 	size_t size{}, usize{}, offset{}, enter{};
 	DWORD alignment{};
 	char* code = ShellCode(size, usize, offset, enter, alignment);
-	//code = CompressCode(code, size, usize, offset, enter, alignment);
-	NtHeader.FileHeader.NumberOfSections = 2;
+	code = CompressCode(code, size, usize, offset, enter, alignment, 1);
+	NtHeader.FileHeader.NumberOfSections = 3;
 	IMAGE_SECTION_HEADER headers[3];
 	strcpy((char*)headers[0].Name, ".love");
 	strcpy((char*)headers[1].Name, ".for");
@@ -65,7 +65,6 @@ void PE::pack()
 		headers[i].PointerToLinenumbers = 0;
 		headers[i].NumberOfRelocations = 0;
 		headers[i].NumberOfLinenumbers = 0;
-		
 	}
 	headers[0].Characteristics = 0xE0000080;
 	headers[1].Characteristics = 0xE0000040;
@@ -96,27 +95,19 @@ void PE::pack()
 	char* buf = new char[headers[2].VirtualAddress + headers[2].SizeOfRawData];
 	memset(buf, 0, headers[2].VirtualAddress + headers[2].SizeOfRawData);
 	SectionHeaders = (IMAGE_SECTION_HEADER*)(buf + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS));
-	memcpy(SectionHeaders, headers + 1, sizeof(IMAGE_SECTION_HEADER) * NtHeader.FileHeader.NumberOfSections);
+	memcpy(SectionHeaders, headers, sizeof(IMAGE_SECTION_HEADER) * NtHeader.FileHeader.NumberOfSections);
 	memcpy(buf + headers[1].VirtualAddress, code, size);
 	memcpy(buf + headers[2].VirtualAddress, VirtualIMG + rbase, rsize);
 	RepairSrc(buf + headers[2].VirtualAddress, 0, headers[2].VirtualAddress - rbase, 0);
 	NtHeader.OptionalHeader.SizeOfImage = SizeOfImage;
 	NtHeader.OptionalHeader.AddressOfEntryPoint = headers[1].VirtualAddress + enter;
-	//for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++)
+	for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++)
 	{
-		//NtHeader.OptionalHeader.DataDirectory[1].Size = 0;
-		//NtHeader.OptionalHeader.DataDirectory[1].VirtualAddress = 0;
+		NtHeader.OptionalHeader.DataDirectory[1].Size = 0;
+		NtHeader.OptionalHeader.DataDirectory[1].VirtualAddress = 0;
 	}
-	NtHeader.OptionalHeader.DataDirectory[1].Size = 0;
-	NtHeader.OptionalHeader.DataDirectory[1].VirtualAddress = 0;
 	NtHeader.OptionalHeader.DataDirectory[2].Size = rsize;
 	NtHeader.OptionalHeader.DataDirectory[2].VirtualAddress = headers[2].VirtualAddress;
-	NtHeader.OptionalHeader.DataDirectory[10].Size = 0;
-	NtHeader.OptionalHeader.DataDirectory[10].VirtualAddress = 0;
-	NtHeader.OptionalHeader.DataDirectory[12].Size = 0;
-	NtHeader.OptionalHeader.DataDirectory[12].VirtualAddress = 0;
-	NtHeader.OptionalHeader.DataDirectory[13].Size = 0;
-	NtHeader.OptionalHeader.DataDirectory[13].VirtualAddress = 0;
 	delete[] VirtualIMG;
 	VirtualIMG = buf;
 }
@@ -139,23 +130,29 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, size_t& offset, 
 #endif
 	size_t old_size = size;
 	size = code_size + decode_size + dest_size;
-	enter = type ? usize : 0;
+	offset = type == 0 ? 0 : usize;
 	usize += size;
-	alignment = (alignment + (enter + size) % usize) % NtHeader.OptionalHeader.SectionAlignment;
+	if (type == 0)
+		alignment = (alignment + size) % NtHeader.OptionalHeader.SectionAlignment;
 	char* buf = new char[size];
 	memset(buf, 0, size);
 	memcpy(buf, code_base, code_size);
 #ifdef _M_IX86
-	size_t* p = (size_t*)(buf + 62);
-	*p = dest_size;
-	p = (size_t*)(buf + 67);
-	*p = old_size;
+	*(size_t*)(buf + 62) = dest_size;
+	*(size_t*)(buf + 67) = old_size;
+	*(size_t*)(buf + 133) = enter;
+	if (type != 0)
+	{
+		*(unsigned char*)(buf + 87) = 0x90;
+		*(unsigned char*)(buf + 88) = 0x90;
+	}
 #else
 	size_t* p = (size_t*)(buf + 102);
 	*p = dest_size;
 	p = (size_t*)(buf + 112);
 	*p = old_size;
 #endif
+	enter = 0;
 	DWORD* function_base = (DWORD*)GetProcAddress(hmod, "LzmaDecode");
 	memcpy(buf + code_size, function_base, decode_size);
 	memcpy(buf + code_size + decode_size, compress_buf, dest_size);
