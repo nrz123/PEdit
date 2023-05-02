@@ -140,11 +140,11 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, size_t& offset, 
 #ifdef _M_IX86
 	*(size_t*)(buf + 62) = dest_size;
 	*(size_t*)(buf + 67) = old_size;
-	*(size_t*)(buf + 133) = enter;
+	*(size_t*)(buf + 142) = enter;
 	if (type != 0)
 	{
-		*(unsigned char*)(buf + 87) = 0x90;
-		*(unsigned char*)(buf + 88) = 0x90;
+		*(unsigned char*)(buf + 92) = 0x90;
+		*(unsigned char*)(buf + 93) = 0x90;
 	}
 #else
 	size_t* p = (size_t*)(buf + 102);
@@ -165,11 +165,11 @@ char* PE::DLLCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DW
 {
 	PE dflie("PEDLL.dll");
 	char* buf = dflie.ShellCode(size, usize, offset, enter, alignment);
-	*(unsigned char*)(buf + enter + 476) = 0x90;
-	*(unsigned char*)(buf + enter + 477) = 0x90;
-	*(unsigned char*)(buf + enter + 478) = 0x90;
-	*(unsigned char*)(buf + enter + 479) = 0x90;
 	*(unsigned char*)(buf + enter + 480) = 0x90;
+	*(unsigned char*)(buf + enter + 481) = 0x90;
+	*(unsigned char*)(buf + enter + 482) = 0x90;
+	*(unsigned char*)(buf + enter + 483) = 0x90;
+	*(unsigned char*)(buf + enter + 484) = 0x90;
 	return buf;
 }
 char* PE::ShellCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment)
@@ -206,8 +206,8 @@ void PE::InsertCode(char* code, size_t& size, size_t& usize, size_t& offset, siz
 	memcpy(buf, VirtualIMG, pHeader->VirtualAddress + pHeader->SizeOfRawData);
 	char* buf_enter = buf + NtHeader.OptionalHeader.SizeOfImage + code_vaml;
 	memcpy(buf_enter, enter_base, code_size);
-	*(DWORD*)(buf_enter + 0x1) = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
-	*(size_t*)(buf_enter + 0x11) = enter;
+	*(size_t*)(buf_enter + 15) = enter;
+	*(DWORD*)(buf_enter + 31) = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
 	memcpy(buf_enter + code_size + offset, code, size);
 	delete[] code;
 	SectionHeaders = (IMAGE_SECTION_HEADER*)(buf + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS));

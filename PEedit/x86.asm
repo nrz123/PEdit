@@ -44,12 +44,16 @@ mov eax,15992
 call chkstk
 mov esi,12345678h
 mov eax,12345678h
-call $ + 5
+call fun_point
+fun_point:
 pop edx
-add edx, 70
+lea edi,[fun_end - fun_point]
+add edx, edi
 lea edi,[edx + 2732 + esi]
 jmp decode
-lea edi,[edx - 92h]
+lea ecx, [fun_end - fun_start]
+mov edi, edx
+sub edi, ecx
 sub edi, eax
 decode:
 push esp
@@ -89,15 +93,16 @@ mov dword ptr [ecx], eax
 mov eax,fun_start
 ret
 fun_start:
-mov edi, 12345678h   ;Èë¿Ú
-call $ + 5
-pop eax
-mov esi, eax
-add eax, 14h
+call fun_point
+fun_point:
+pop esi
+lea eax, [fun_end - fun_point]
+add eax, esi
 add eax, 12345678h
 call eax
-sub esi, 0ah
-sub esi, edi
+lea eax, [fun_point - fun_start]
+sub esi, eax
+sub esi, 12345678h
 call esi
 fun_end:
 enter_code endp
@@ -179,7 +184,9 @@ push ebx
 push esi
 push edi
 mov ebp, esp
-mov ebx, ecx
+mov eax, dword ptr [ecx + 3ch] 
+mov esi, dword ptr [ecx + eax + 80h]
+mov ebx, edx
 mov ecx, 0bbafdf85h ;hash of GetProcAddress
 call find_function
 test eax, eax
@@ -191,11 +198,6 @@ test eax, eax
 jz fun_out
 push eax
 sub esp, 20h
-mov eax, dword ptr [ebx + 3ch] 
-mov esi, dword ptr [ebx + eax + 80h]
-mov ecx, dword ptr [ebx + eax + 50h]
-sub ebx, dword ptr [ebx + eax + 38h]
-sub ebx, ecx
 import_loop:
 cmp dword ptr [ebx + esi],0
 jz fun_out
@@ -237,14 +239,11 @@ push ebx
 push esi
 push edi
 mov ebp,esp
-mov ebx,ecx
-mov edi, dword ptr [ebx + 3ch]
-mov eax, dword ptr [ebx + edi + 34h]
-mov esi, dword ptr [ebx + edi + 0a0h]
-mov edx, dword ptr [ebx + edi + 0a4h]
-mov ecx, dword ptr [ebx + edi + 50h]
-sub ebx, dword ptr [ebx + edi + 38h]
-sub ebx, ecx
+mov ebx,edx
+mov edi, dword ptr [ecx + 3ch]
+mov eax, dword ptr [ecx + edi + 34h]
+mov esi, dword ptr [ecx + edi + 0a0h]
+mov edx, dword ptr [ecx + edi + 0a4h]
 add esi, ebx
 add edx, esi
 reloc_loop:
@@ -254,9 +253,9 @@ mov edi, 8h
 reloc_item_loop:
 cmp edi, dword ptr [esi + 4h]
 jz reloc_item_loop_out
-movzx ecx,word ptr [esi + edi]
+movzx ecx, word ptr [esi + edi]
 add edi, 2h
-test ecx,ecx
+test ecx, ecx
 jz reloc_item_loop
 and cx, 0fffh
 add ecx, dword ptr [esi]
@@ -278,10 +277,6 @@ call find_function
 test eax, eax
 jz fun_out
 mov edi, eax
-mov eax, dword ptr [ebx + 3ch]
-mov ecx, dword ptr [ebx + eax + 50h]
-sub ebx, dword ptr [ebx + eax + 38h]
-sub ebx, ecx
 mov esi, dword ptr [ebx + 3ch]
 push eax
 push esp
@@ -300,22 +295,33 @@ call edi
 jmp fun_out
 main_start:
 sub esp, 28h
-call $ + 5
+call fun_point
+fun_point:
 pop esi
-add esi,040h
-mov ecx,esi
-call repair_import
-mov ecx,esi
-call repair_reloc
-mov ecx,esi
-call repair_protect
+lea eax,[fun_end - fun_point]
+add esi,eax
 mov ecx, dword ptr [esi + 3ch]
-mov eax, dword ptr [esi + ecx + 28h]
-mov edx, dword ptr [esi + ecx + 50h]
-sub esi, dword ptr [esi + ecx + 38h]
-sub esi, edx
-add eax, esi
+lea eax, [fun_end - fun_start]
+mov edx, dword ptr [esi + ecx + 38h]
+dec edx
+add eax, edx
+not edx
+and eax, edx
+add eax, dword ptr [esi + ecx + 50h]
+mov edi, esi
+sub edi, eax
 mov ecx, esi
+mov edx, edi
+call repair_import
+mov ecx, esi
+mov edx, edi
+call repair_reloc
+mov ecx, edi
+call repair_protect
+mov eax, dword ptr [esi + 3ch]
+mov eax, dword ptr [esi + eax + 28h]
+add eax, edi
+mov ecx, edi
 mov edx, 1h
 push 0
 push 0
