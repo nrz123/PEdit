@@ -164,7 +164,13 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, size_t& offset, 
 char* PE::DLLCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment)
 {
 	PE dflie("PEDLL.dll");
-	return dflie.ShellCode(size, usize, offset, enter, alignment);
+	char* buf = dflie.ShellCode(size, usize, offset, enter, alignment);
+	*(unsigned char*)(buf + enter + 476) = 0x90;
+	*(unsigned char*)(buf + enter + 477) = 0x90;
+	*(unsigned char*)(buf + enter + 478) = 0x90;
+	*(unsigned char*)(buf + enter + 479) = 0x90;
+	*(unsigned char*)(buf + enter + 480) = 0x90;
+	return buf;
 }
 char* PE::ShellCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment)
 {
@@ -193,20 +199,21 @@ void PE::InsertCode(char* code, size_t& size, size_t& usize, size_t& offset, siz
 	void* enter_base = enter_code(code_size);
 	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
 	DWORD code_vaml = (SectionAlignment - (code_size + alignment) % SectionAlignment) % SectionAlignment;
-	size_t buf_size = NtHeader.OptionalHeader.SizeOfImage + code_vaml + code_size + size;
+	size_t buf_size = NtHeader.OptionalHeader.SizeOfImage + code_vaml + code_size + offset + size;
 	char* buf = new char[buf_size];
 	memset(buf, 0, buf_size);
-	memcpy(buf, VirtualIMG, NtHeader.OptionalHeader.SizeOfImage);
+	IMAGE_SECTION_HEADER* pHeader = SectionHeaders + NtHeader.FileHeader.NumberOfSections - 1;
+	memcpy(buf, VirtualIMG, pHeader->VirtualAddress + pHeader->SizeOfRawData);
 	char* buf_enter = buf + NtHeader.OptionalHeader.SizeOfImage + code_vaml;
 	memcpy(buf_enter, enter_base, code_size);
-	DWORD* pEnter = (DWORD*)(buf_enter + 0x1);
-	*pEnter = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
-	memcpy(buf_enter + code_size, code, size);
+	*(DWORD*)(buf_enter + 0x1) = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
+	*(size_t*)(buf_enter + 0x11) = enter;
+	memcpy(buf_enter + code_size + offset, code, size);
 	delete[] code;
 	SectionHeaders = (IMAGE_SECTION_HEADER*)(buf + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS));
-	IMAGE_SECTION_HEADER* pHeader = SectionHeaders + NtHeader.FileHeader.NumberOfSections - 1;
+	pHeader = SectionHeaders + NtHeader.FileHeader.NumberOfSections - 1;
 	DWORD faml = NtHeader.OptionalHeader.FileAlignment - 1;
-	pHeader->SizeOfRawData = (NtHeader.OptionalHeader.SizeOfImage - pHeader->VirtualAddress + code_vaml + code_size + size + faml) & ~faml;
+	pHeader->SizeOfRawData = (NtHeader.OptionalHeader.SizeOfImage - pHeader->VirtualAddress + code_vaml + code_size + offset + size + faml) & ~faml;
 	DWORD vaml = SectionAlignment - 1;
 	pHeader->Misc.VirtualSize = (NtHeader.OptionalHeader.SizeOfImage - pHeader->VirtualAddress + code_vaml + code_size + usize + vaml) & ~vaml;
 	pHeader->Characteristics = 0xE0000080;

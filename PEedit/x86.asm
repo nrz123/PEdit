@@ -90,12 +90,15 @@ mov eax,fun_start
 ret
 fun_start:
 mov edi, 12345678h   ;Èë¿Ú
-call fun_end
 call $ + 5
 pop eax
-sub eax, 0fh
-sub eax, edi
+mov esi, eax
+add eax, 14h
+add eax, 12345678h
 call eax
+sub esi, 0ah
+sub esi, edi
+call esi
 fun_end:
 enter_code endp
 
@@ -235,12 +238,12 @@ push esi
 push edi
 mov ebp,esp
 mov ebx,ecx
-mov edx, dword ptr [ebx + 3ch]
-mov eax, dword ptr [ebx + edx + 34h]
-mov esi, dword ptr [ebx + edx + 0a0h]
-mov edx, dword ptr [ebx + edx + 0a4h]
-mov ecx, dword ptr [ebx + edx + 50h]
-sub ebx, dword ptr [ebx + edx + 38h]
+mov edi, dword ptr [ebx + 3ch]
+mov eax, dword ptr [ebx + edi + 34h]
+mov esi, dword ptr [ebx + edi + 0a0h]
+mov edx, dword ptr [ebx + edi + 0a4h]
+mov ecx, dword ptr [ebx + edi + 50h]
+sub ebx, dword ptr [ebx + edi + 38h]
 sub ebx, ecx
 add esi, ebx
 add edx, esi
