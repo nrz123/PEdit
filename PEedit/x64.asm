@@ -203,18 +203,13 @@ jz fit_out
 mov rax,08000000000000000h
 test rdx,rax
 jz fit_next
-mov edx, edx
-mov eax, dword ptr [rcx + 3ch] 
-mov eax, dword ptr [rcx + rax + 88h]
-mov eax, dword ptr [rcx + rax + 1ch]
-add rax, rcx
-mov edx, dword ptr [rax + 4 * rdx - 4]
-add rdx, rcx
-mov qword ptr [rbx + rdi], rdx
-jmp fit_continue
+mov rax,07fffffffffffffffh
+and rdx, rax
+jmp fit_next_out
 fit_next:
 add rdx, rbx
 add rdx, 2
+fit_next_out:
 mov rax, qword ptr [rbp - 8h]
 mov qword ptr [rbp - 18h], rcx
 push 0

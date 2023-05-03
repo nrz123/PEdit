@@ -176,11 +176,11 @@ char* PE::DLLCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DW
 	*(unsigned char*)(buf + enter + 483) = 0x90;
 	*(unsigned char*)(buf + enter + 484) = 0x90;
 #else
-	*(unsigned char*)(buf + enter + 651) = 0x90;
-	*(unsigned char*)(buf + enter + 652) = 0x90;
-	*(unsigned char*)(buf + enter + 653) = 0x90;
-	*(unsigned char*)(buf + enter + 654) = 0x90;
-	*(unsigned char*)(buf + enter + 655) = 0x90;
+	*(unsigned char*)(buf + enter + 631) = 0x90;
+	*(unsigned char*)(buf + enter + 632) = 0x90;
+	*(unsigned char*)(buf + enter + 633) = 0x90;
+	*(unsigned char*)(buf + enter + 634) = 0x90;
+	*(unsigned char*)(buf + enter + 635) = 0x90;
 #endif
 	return buf;
 }
@@ -223,9 +223,9 @@ char* PE::ShellCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, 
 		*(unsigned char*)(pCode + 458) = 0x90;
 		*(unsigned char*)(pCode + 459) = 0x90;
 #else
-		*(unsigned char*)(pCode + 623) = 0x90;
-		*(unsigned char*)(pCode + 624) = 0x90;
-		*(unsigned char*)(pCode + 625) = 0x90;
+		*(unsigned char*)(pCode + 603) = 0x90;
+		*(unsigned char*)(pCode + 604) = 0x90;
+		*(unsigned char*)(pCode + 605) = 0x90;
 #endif
 	}
 	memcpy(pCode + code_size, (char*)(&DosHeader), sizeof(IMAGE_DOS_HEADER));
@@ -250,7 +250,7 @@ void PE::InsertCode(char* code, size_t& size, size_t& usize, size_t& offset, siz
 	*(size_t*)(buf_enter + 15) = enter;
 	*(DWORD*)(buf_enter + 31) = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
 #else
-	* (size_t*)(buf_enter + 10) = enter;
+	* (size_t*)(buf_enter + 10) = offset + enter;
 	*(DWORD*)(buf_enter + 31) = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
 #endif
 	memcpy(buf_enter + code_size + offset, code, size);
