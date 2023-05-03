@@ -262,7 +262,6 @@ jmp reloc_item_loop
 reloc_item_loop_out:
 add rsi, rdi
 jmp reloc_loop
-
 repair_protect:
 push rbp
 push rbx
@@ -300,7 +299,6 @@ mov rcx, rbx
 push rcx
 call rdi
 jmp fun_out
-
 main_start:
 sub rsp, 28h
 lea rsi, [fun_end]
