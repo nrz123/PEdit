@@ -52,7 +52,7 @@ void PE::pack()
 {
 	size_t size{}, usize{}, offset{}, enter{};
 	DWORD alignment{};
-	char* code = ShellCode(size, usize, offset, enter, alignment);
+	char* code = ShellCode(size, usize, offset, enter, alignment, 1);
 	code = CompressCode(code, size, usize, offset, enter, alignment, 1);
 	NtHeader.FileHeader.NumberOfSections = 3;
 	IMAGE_SECTION_HEADER headers[3];
@@ -147,10 +147,14 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, size_t& offset, 
 		*(unsigned char*)(buf + 93) = 0x90;
 	}
 #else
-	size_t* p = (size_t*)(buf + 102);
-	*p = dest_size;
-	p = (size_t*)(buf + 112);
-	*p = old_size;
+	*(size_t*)(buf + 102) = dest_size;
+	*(size_t*)(buf + 112) = old_size;
+	*(size_t*)(buf + 178) = enter;
+	if (type != 0)
+	{
+		*(unsigned char*)(buf + 131) = 0x90;
+		*(unsigned char*)(buf + 132) = 0x90;
+	}
 #endif
 	enter = 0;
 	DWORD* function_base = (DWORD*)GetProcAddress(hmod, "LzmaDecode");
@@ -161,36 +165,72 @@ char* PE::CompressCode(char* code, size_t& size, size_t& usize, size_t& offset, 
 	FreeLibrary(hmod);
 	return buf;
 }
-char* PE::DLLCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment)
+char* PE::DLLCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment, DWORD type)
 {
 	PE dflie("PEDLL.dll");
-	char* buf = dflie.ShellCode(size, usize, offset, enter, alignment);
+	char* buf = dflie.ShellCode(size, usize, offset, enter, alignment, type);
+#ifdef _M_IX86
 	*(unsigned char*)(buf + enter + 480) = 0x90;
 	*(unsigned char*)(buf + enter + 481) = 0x90;
 	*(unsigned char*)(buf + enter + 482) = 0x90;
 	*(unsigned char*)(buf + enter + 483) = 0x90;
 	*(unsigned char*)(buf + enter + 484) = 0x90;
+#else
+	*(unsigned char*)(buf + enter + 651) = 0x90;
+	*(unsigned char*)(buf + enter + 652) = 0x90;
+	*(unsigned char*)(buf + enter + 653) = 0x90;
+	*(unsigned char*)(buf + enter + 654) = 0x90;
+	*(unsigned char*)(buf + enter + 655) = 0x90;
+#endif
 	return buf;
 }
-char* PE::ShellCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment)
+char* PE::ShellCode(size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment, DWORD type)
 {
 	size_t code_size{};
 	void* insert_base = insert_dll(code_size);
-	IMAGE_SECTION_HEADER* pLastHeader = SectionHeaders + NtHeader.FileHeader.NumberOfSections - 1;
+	IMAGE_SECTION_HEADER* pHeader = SectionHeaders + NtHeader.FileHeader.NumberOfSections - 1;
 	DWORD& SectionAlignment = NtHeader.OptionalHeader.SectionAlignment;
 	DWORD code_vaml = (SectionAlignment - code_size % SectionAlignment) % SectionAlignment;
-	usize = size = code_vaml + code_size + NtHeader.OptionalHeader.SizeOfImage;
-	enter = NtHeader.OptionalHeader.SizeOfImage - SectionHeaders->VirtualAddress + code_vaml;
-	offset = 0;
-	alignment = 0;
+	if (type == 0)
+	{
+		size = code_size + pHeader->VirtualAddress + pHeader->SizeOfRawData;
+		usize = code_size + NtHeader.OptionalHeader.SizeOfImage;
+		enter = 0;
+		offset = 0;
+		alignment = (alignment + code_size) % SectionAlignment;
+	}
+	else
+	{
+		usize = size = code_vaml + code_size + NtHeader.OptionalHeader.SizeOfImage;
+		enter = NtHeader.OptionalHeader.SizeOfImage - SectionHeaders->VirtualAddress + code_vaml;
+		offset = 0;
+		alignment = 0;
+	}
 	char* buf = new char[size];
 	memset(buf, 0, size);
-	memcpy(buf, VirtualIMG + SectionHeaders->VirtualAddress, pLastHeader->VirtualAddress + pLastHeader->SizeOfRawData - SectionHeaders->VirtualAddress);
+	char* pSection = buf;
 	char* pCode = buf + NtHeader.OptionalHeader.SizeOfImage - SectionHeaders->VirtualAddress + code_vaml;
+	if (type == 0)
+	{
+		pCode = buf;
+		pSection = buf + code_size + SectionHeaders->VirtualAddress;
+	}
+	memcpy(pSection, VirtualIMG + SectionHeaders->VirtualAddress, pHeader->VirtualAddress + pHeader->SizeOfRawData - SectionHeaders->VirtualAddress);
 	memcpy(pCode, insert_base, code_size);
+	if (type == 0)
+	{
+#ifdef _M_IX86
+		*(unsigned char*)(pCode + 458) = 0x90;
+		*(unsigned char*)(pCode + 459) = 0x90;
+#else
+		*(unsigned char*)(pCode + 623) = 0x90;
+		*(unsigned char*)(pCode + 624) = 0x90;
+		*(unsigned char*)(pCode + 625) = 0x90;
+#endif
+	}
 	memcpy(pCode + code_size, (char*)(&DosHeader), sizeof(IMAGE_DOS_HEADER));
 	memcpy(pCode + code_size + DosHeader.e_lfanew, (char*)(&NtHeader), sizeof(IMAGE_NT_HEADERS));
-	memcpy(pCode + code_size + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS), SectionHeaders, sizeof(IMAGE_SECTION_HEADER) * NtHeader.FileHeader.NumberOfSections);;
+	memcpy(pCode + code_size + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS), SectionHeaders, sizeof(IMAGE_SECTION_HEADER) * NtHeader.FileHeader.NumberOfSections);
 	return buf;
 }
 void PE::InsertCode(char* code, size_t& size, size_t& usize, size_t& offset, size_t& enter, DWORD& alignment)
@@ -206,8 +246,13 @@ void PE::InsertCode(char* code, size_t& size, size_t& usize, size_t& offset, siz
 	memcpy(buf, VirtualIMG, pHeader->VirtualAddress + pHeader->SizeOfRawData);
 	char* buf_enter = buf + NtHeader.OptionalHeader.SizeOfImage + code_vaml;
 	memcpy(buf_enter, enter_base, code_size);
+#ifdef _M_IX86
 	*(size_t*)(buf_enter + 15) = enter;
 	*(DWORD*)(buf_enter + 31) = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
+#else
+	* (size_t*)(buf_enter + 10) = enter;
+	*(DWORD*)(buf_enter + 31) = NtHeader.OptionalHeader.SizeOfImage + code_vaml - NtHeader.OptionalHeader.AddressOfEntryPoint;
+#endif
 	memcpy(buf_enter + code_size + offset, code, size);
 	delete[] code;
 	SectionHeaders = (IMAGE_SECTION_HEADER*)(buf + DosHeader.e_lfanew + sizeof(IMAGE_NT_HEADERS));

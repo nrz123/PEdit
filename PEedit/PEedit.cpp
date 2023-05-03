@@ -16,7 +16,7 @@ size_t GetHash(const char* fun_name)
 int main()
 {
 #if 1
-	PE p("Test2.exe");
+	PE p("Test.exe");
 	size_t size{}, usize{}, offset{}, enter{};
 	DWORD alignment{};
 	char* code = p.DLLCode(size, usize, offset, enter, alignment);
@@ -24,21 +24,9 @@ int main()
 	p.InsertCode(code, size, usize, offset, enter, alignment);
 	p.pack();
 	p.exportToFile("Test1.exe");
-
-	/*PE p1("Test1_dump.exe");
-	PE p2("Test2_dump.exe");
-	for (DWORD i = 0x187000; i < 0x2b2000; i++)
-	{
-		unsigned char x1 = p1.VirtualIMG[i];
-		unsigned char x2 = p2.VirtualIMG[i];
-		if (x1 != x2)
-		{
-			printf("%lld\n", i);
-		}
-	}*/
 #else
 	size_t hash = GetHash("VirtualProtect");
-	printf("result of hash is %.8x\n", hash);
+	printf("result of hash is %.16llx\n", hash);
 	getchar();
 #endif
 }

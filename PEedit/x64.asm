@@ -20,7 +20,7 @@ mov qword ptr [rsp + 8],r11
 xor r11,r11
 lea r10,[rsp + 18h]
 sub r10,rax
-cmovb       r10,r11
+cmovb r10,r11
 mov r11,qword ptr gs:[10h]
 cmp r10,r11
 jae cs10+10h
@@ -42,6 +42,10 @@ mov r8, 1234567812345678h
 mov rax, 1234567812345678h
 lea rdx, [fun_end + 2722]
 lea rdi, [rdx + r8]
+jmp decode
+lea rdi, [fun_start]
+sub rdi, rax
+decode:
 push rsp
 push 2
 push 3
@@ -59,6 +63,8 @@ push rcx
 call fun_end
 mov rsp, rbp
 push rax
+mov rax, 1234567812345678h
+add rdi, rax
 call rdi
 mov rsp, rbp
 pop rdi
@@ -75,11 +81,14 @@ mov qword ptr [rcx], rax
 mov rax,fun_start
 ret
 fun_start:
-mov edi, 12345678h   ;Èë¿Ú
 push rax
-call fun_end
+lea rax, [fun_end]
+mov rcx, 1234567812345678h
+add rax, rcx
+call rax
 lea rax, [fun_start]
-sub rax, rdi
+mov ecx, 12345678h
+sub rax, rcx
 call rax
 pop rax
 fun_end:
@@ -162,7 +171,9 @@ push rbx
 push rsi
 push rdi
 mov rbp, rsp
-mov rbx, rcx
+mov esi, dword ptr [rcx + 3ch] 
+mov esi, dword ptr [rcx + rsi + 90h]
+mov rbx, rdi
 mov rcx, 2b3def2c9071f059h ;hash of GetProcAddress
 call find_function
 test rax, rax
@@ -174,8 +185,6 @@ test rax, rax
 jz fun_out
 push rax
 sub rsp, 20h
-mov esi, dword ptr [rbx + 3ch] 
-mov esi, dword ptr [rbx + rsi + 90h]
 import_loop:
 cmp dword ptr [rbx + rsi],0
 jz fun_out
@@ -226,12 +235,12 @@ push rbp
 push rbx
 push rsi
 push rdi
-mov rbp,rsp
-mov rbx,rcx
-mov edx, dword ptr [rbx + 3ch]
-mov rax, qword ptr [rbx + rdx + 30h]
-mov esi, dword ptr [rbx + rdx + 0b0h]
-mov edx, dword ptr [rbx + rdx + 0b4h]
+mov rbp, rsp
+mov rbx, rdx
+mov edx, dword ptr [rcx + 3ch]
+mov rax, qword ptr [rcx + rdx + 30h]
+mov esi, dword ptr [rcx + rdx + 0b0h]
+mov edx, dword ptr [rcx + rdx + 0b4h]
 add rsi, rbx
 add rdx, rsi
 reloc_loop:
@@ -253,17 +262,70 @@ jmp reloc_item_loop
 reloc_item_loop_out:
 add rsi, rdi
 jmp reloc_loop
+
+repair_protect:
+push rbp
+push rbx
+push rsi
+push rdi
+mov rbp, rsp
+mov rbx, rcx
+mov rcx, 9b2e41be54366260h
+call find_function
+test rax, rax
+jz fun_out
+mov rdi, rax
+mov esi, dword ptr [rbx + 3ch]
+push rax
+mov r9, rsp
+push r9
+mov r8, 4
+push r8
+mov edx, dword ptr [rbx + rsi + 114h]
+push rdx
+mov rcx, rbx
+push rcx
+call rdi
+add rsp, 20h
+and byte ptr [rbx + rsi + 12fh], 7fh
+pop r8
+mov r8d, r8d
+push rax
+mov r9, rsp
+push r9
+push r8
+mov edx, dword ptr [rbx + rsi + 114h]
+push rdx
+mov rcx, rbx
+push rcx
+call rdi
+jmp fun_out
+
 main_start:
 sub rsp, 28h
-lea rsi,[fun_end]
-mov rcx,rsi
+lea rsi, [fun_end]
+mov ecx, dword ptr [rsi + 3ch]
+lea rax, [fun_end - fun_start]
+mov edx, dword ptr [rsi + rcx + 38h]
+dec rdx
+add rax, rdx
+not rdx
+and rax, rdx
+add eax, dword ptr [rsi + rcx + 50h]
+mov rdi, rsi
+sub rdi, rax
+mov rcx, rsi
+mov rdx, rdi
 call repair_import
-mov rcx,rsi
+mov rcx, rsi
+mov rdx, rdi
 call repair_reloc
+mov rcx, rdi
+call repair_protect
 mov eax, dword ptr [rsi + 3ch]
 mov eax, dword ptr [rsi + rax + 28h]
-add rax, rsi
-mov rcx, rsi
+add rax, rdi
+mov rcx, rdi
 mov rdx, 1h
 mov r8, 0
 push 0
