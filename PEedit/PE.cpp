@@ -103,8 +103,8 @@ void PE::pack()
 	NtHeader.OptionalHeader.AddressOfEntryPoint = headers[1].VirtualAddress + enter;
 	for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++)
 	{
-		NtHeader.OptionalHeader.DataDirectory[1].Size = 0;
-		NtHeader.OptionalHeader.DataDirectory[1].VirtualAddress = 0;
+		NtHeader.OptionalHeader.DataDirectory[i].Size = 0;
+		NtHeader.OptionalHeader.DataDirectory[i].VirtualAddress = 0;
 	}
 	NtHeader.OptionalHeader.DataDirectory[2].Size = rsize;
 	NtHeader.OptionalHeader.DataDirectory[2].VirtualAddress = headers[2].VirtualAddress;
