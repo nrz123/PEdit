@@ -5,10 +5,33 @@
 assume fs:nothing
 
 decode_code proc
-lea eax, [fun_end - fun_start]
 mov ecx,dword ptr [esp + 4]
+mov edx, dword ptr [esp + 8]
+cmp edx, 0
+jnz point1
+lea eax, [fun_end - fun_start]
 mov dword ptr [ecx], eax
 mov eax,fun_start
+ret
+point1:
+cmp edx, 1
+jnz point2
+lea eax, [point1_end - point1_start]
+mov dword ptr [ecx], eax
+lea eax, [point1_start - fun_start]
+ret
+point2:
+cmp edx, 2
+jnz point3
+lea eax, [point_src - fun_start + 1]
+ret
+point3:
+cmp edx, 3
+jnz point4
+lea eax, [point_dst - fun_start + 1]
+ret
+point4:
+lea eax, [point_enter - fun_start + 2]
 ret
 fun_start:
 push ebp
@@ -42,7 +65,9 @@ jmp short cs10
 main_start:
 mov eax,15992
 call chkstk
+point_src:
 mov esi,12345678h
+point_dst:
 mov eax,12345678h
 call fun_point
 fun_point:
@@ -50,7 +75,9 @@ pop edx
 lea edi,[fun_end - fun_point]
 add edx, edi
 lea edi,[edx + 2732 + esi]
+point1_start:
 jmp decode
+point1_end:
 lea ecx, [fun_end - fun_start]
 mov edi, edx
 sub edi, ecx
@@ -75,6 +102,7 @@ push ecx
 call edx
 mov esp, ebp
 push eax
+point_enter:
 add edi, 12345678h
 call edi
 mov esp, ebp
@@ -87,10 +115,21 @@ fun_end:
 decode_code endp
 
 enter_code proc
-lea eax, [fun_end - fun_start]
 mov ecx,dword ptr [esp + 4]
+mov edx, dword ptr [esp + 8]
+cmp edx, 0
+jnz point1
+lea eax, [fun_end - fun_start]
 mov dword ptr [ecx], eax
 mov eax,fun_start
+ret
+point1:
+cmp edx, 1
+jnz point2
+lea eax, [point1_start - fun_start + 1]
+ret
+point2:
+lea eax, [point2_start - fun_start + 2]
 ret
 fun_start:
 call fun_point
@@ -98,20 +137,37 @@ fun_point:
 pop esi
 lea eax, [fun_end - fun_point]
 add eax, esi
+point1_start:
 add eax, 12345678h
 call eax
 lea eax, [fun_point - fun_start]
 sub esi, eax
+point2_start:
 sub esi, 12345678h
 call esi
 fun_end:
 enter_code endp
 
-insert_dll proc
-lea eax, [fun_end - fun_start]
+pe_code proc
 mov ecx,dword ptr [esp + 4]
+mov edx, dword ptr [esp + 8]
+cmp edx, 0
+jnz point1
+lea eax, [fun_end - fun_start]
 mov dword ptr [ecx], eax
 mov eax,fun_start
+ret
+point1:
+cmp edx, 1
+jnz point2
+lea eax, [point1_end - point1_start]
+mov dword ptr [ecx], eax
+lea eax, [point1_start - fun_start]
+ret
+point2:
+lea eax, [point2_end - point2_start]
+mov dword ptr [ecx], eax
+lea eax, [point2_start - fun_start]
 ret
 fun_start:
 push ebp
@@ -309,7 +365,9 @@ not edx
 and eax, edx
 add eax, dword ptr [esi + ecx + 50h]
 mov edi, esi
+point1_start:
 sub edi, eax
+point1_end:
 mov ecx, esi
 mov edx, edi
 call repair_import
@@ -317,7 +375,9 @@ mov ecx, esi
 mov edx, edi
 call repair_reloc
 mov ecx, edi
+point2_start:
 call repair_protect
+point2_end:
 mov eax, dword ptr [esi + 3ch]
 mov eax, dword ptr [esi + eax + 28h]
 add eax, edi
@@ -330,6 +390,6 @@ push ecx
 call eax
 jmp fun_out
 fun_end:
-insert_dll endp
+pe_code endp
 
 end

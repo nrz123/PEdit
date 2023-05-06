@@ -2,9 +2,31 @@
 .code
 
 decode_code proc
+cmp rdx, 0
+jnz point1
 lea rax, [fun_end - fun_start]
 mov qword ptr [rcx], rax
 mov rax,fun_start
+ret
+point1:
+cmp rdx, 1
+jnz point2
+lea rax, [point1_end - point1_start]
+mov qword ptr [rcx], rax
+lea rax,[point1_start - fun_start]
+ret
+point2:
+cmp rdx, 2
+jnz point3
+lea rax,[point_src - fun_start + 2]
+ret
+point3:
+cmp rdx, 3
+jnz point4
+lea rax,[point_dst - fun_start + 2]
+ret
+point4:
+lea rax,[point_enter - fun_start + 2]
 ret
 fun_start:
 push rbp
@@ -38,11 +60,15 @@ main_start:
 mov eax,15992
 call chkstk
 sub rsp, rax
+point_src:
 mov r8, 1234567812345678h
+point_dst:
 mov rax, 1234567812345678h
 lea rdx, [fun_end + 2722]
 lea rdi, [rdx + r8]
+point1_start:
 jmp decode
+point1_end:
 lea rdi, [fun_start]
 sub rdi, rax
 decode:
@@ -63,6 +89,7 @@ push rcx
 call fun_end
 mov rsp, rbp
 push rax
+point_enter:
 mov rax, 1234567812345678h
 add rdi, rax
 call rdi
@@ -76,17 +103,29 @@ fun_end:
 decode_code endp
 
 enter_code proc
+cmp rdx, 0
+jnz point1
 lea rax, [fun_end - fun_start]
 mov qword ptr [rcx], rax
 mov rax,fun_start
 ret
+point1:
+cmp rdx, 1
+jnz point2
+lea rax,[point1_start - fun_start + 2]
+ret
+point2:
+lea rax,[point2_start - fun_start + 1]
+ret
 fun_start:
 push rax
 lea rax, [fun_end]
+point1_start:
 mov rcx, 1234567812345678h
 add rax, rcx
 call rax
 lea rax, [fun_start]
+point2_start:
 mov ecx, 12345678h
 sub rax, rcx
 call rax
@@ -94,10 +133,24 @@ pop rax
 fun_end:
 enter_code endp
 
-insert_dll proc
+pe_code proc
+cmp rdx, 0
+jnz point1
 lea rax, [fun_end - fun_start]
 mov qword ptr [rcx], rax
 mov rax,fun_start
+ret
+point1:
+cmp rdx, 1
+jnz point2
+lea rax, [point1_end - point1_start]
+mov qword ptr [rcx], rax
+lea rax,[point1_start - fun_start]
+ret
+point2:
+lea rax, [point2_end - point2_start]
+mov qword ptr [rcx], rax
+lea rax,[point2_start - fun_start]
 ret
 fun_start:
 push rbp
@@ -306,7 +359,9 @@ not rdx
 and rax, rdx
 add eax, dword ptr [rsi + rcx + 50h]
 mov rdi, rsi
+point1_start:
 sub rdi, rax
+point1_end:
 mov rcx, rsi
 mov rdx, rdi
 call repair_import
@@ -314,7 +369,9 @@ mov rcx, rsi
 mov rdx, rdi
 call repair_reloc
 mov rcx, rdi
+point2_start:
 call repair_protect
+point2_end:
 mov eax, dword ptr [rsi + 3ch]
 mov eax, dword ptr [rsi + rax + 28h]
 add rax, rdi
@@ -328,6 +385,6 @@ push rcx
 call rax
 jmp fun_out
 fun_end:
-insert_dll endp
+pe_code endp
 
 end
